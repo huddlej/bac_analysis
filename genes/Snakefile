@@ -1,0 +1,85 @@
+import glob
+import os
+
+configfile: "config.json"
+
+chromosome_fastas = glob.glob("%s/*" % config["chromosomes_dir"])
+#chromosome_fastas = [chromosome_fasta for chromosome_fasta in chromosome_fastas if not "chrUn" in chromosome_fasta]
+chromosomes = [os.path.basename(chromosome_fasta) for chromosome_fasta in chromosome_fastas]
+
+species_name = "bosTau4"
+all_masked = glob.glob("all_masked/*")
+accessions = [os.path.basename(masked_file) for masked_file in all_masked]
+#accessions = accessions[:2]
+accessions = [accession for accession in accessions if accession == "AC243794.3" or accession == "AC243881.3"]
+
+rule all:
+    input: "mRNA.named.bed"
+
+# Map mRNA sequences to BACs.
+
+# TODO: move this rule to tracks/Snakefile
+rule create_bigbed_for_mRNA:
+    input: "mRNA.named.bed", "clones.chromInfo"
+    output: "genes.bb"
+    params: sge_opts=""
+    shell: "bedToBigBed {input} {output}"""
+
+rule get_name_for_mRNA_accession:
+    input: "mRNA_by_accession.bed", "refseq_name_by_accession.tab"
+    output: "mRNA.named.bed"
+    params: sge_opts=""
+    shell: """join -1 4 -2 1 {input} | awk 'OFS="\\t" {{ print $2,$3,$4,$13,$5,$6,$7,$8,$9,$10,$11,$12 }}' | sort -k 1,1 -k 2,2n | uniq > {output}"""
+
+rule sort_mRNA_bed_by_accession:
+    input: "mRNA.bed"
+    output: "mRNA_by_accession.bed"
+    params: sge_opts=""
+    shell: "sort -k 4,4 {input} > {output}"
+
+rule get_refseq_name_by_accession:
+    input: "refLink.txt.gz"
+    output: "refseq_name_by_accession.tab"
+    params: sge_opts=""
+    shell: """zcat {input} | awk 'BEGIN {{ OFS="\\t"; FS="\\t" }} {{ print $3,$1 }}' | sort -k 1,1 > {output}"""
+
+rule get_refseq_lookup_table:
+    output: "refLink.txt.gz"
+    params: sge_opts=""
+    shell: "wget ftp://hgdownload.cse.ucsc.edu/goldenPath/%s/database/{output}" % species_name
+
+rule convert_BAM_to_BED:
+    input: "mRNA.sorted.bam"
+    output: "mRNA.bed"
+    params: sge_opts="-l mfree=1G"
+    shell: "bedtools bamtobed -i {input} -bed12 > {output}"
+
+rule map_mRNA:
+    input: index="bacs_index", mrna="mRNA.fasta"
+    output: "mRNA.sorted.bam"
+    params: sge_opts="-l mfree=4G -pe serial 4"
+    run:
+        shell("gmap -D `pwd` -d {input.index} -B 4 --min-identity=0.99 -t 4 --nofails --npaths=1 -A -f samse {input.mrna} 2> /dev/null | samtools view -Sb -q 30 - | samtools sort - %s" % output[0].rstrip(".bam"))
+
+rule build_GMAP_index:
+    input: "bacs.fasta"
+    output: "bacs_index"
+    params: sge_opts="-l mfree=5G"
+    shell: "gmap_build -D `pwd` -d {output} -k 15 -b 12 {input}"
+
+rule extract_mRNA:
+    input: "refMrna.fa.gz"
+    output: "mRNA.fasta"
+    params: sge_opts=""
+    shell: "gunzip -c {input} > {output}"
+
+rule get_mRNA:
+    output: "refMrna.fa.gz"
+    params: sge_opts=""
+    shell: "wget ftp://hgdownload.cse.ucsc.edu/goldenPath/%s/bigZips/{output}" % species_name
+
+rule get_BACs_fasta:
+    input: all_masked
+    output: "bacs.fasta"
+    params: sge_opts=""
+    shell: "cat {input} > {output}"

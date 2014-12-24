@@ -1,0 +1,114 @@
+import glob
+import os
+
+configfile: "config.json"
+
+chromosome_fastas = glob.glob("%s/*" % config["chromosomes_dir"])
+#chromosome_fastas = [chromosome_fasta for chromosome_fasta in chromosome_fastas if not "chrUn" in chromosome_fasta]
+chromosomes = [os.path.basename(chromosome_fasta) for chromosome_fasta in chromosome_fastas]
+
+species_name = "bosTau4"
+all_masked = glob.glob("all_masked/*")
+accessions = [os.path.basename(masked_file) for masked_file in all_masked]
+#accessions = accessions[:2]
+accessions = [accession for accession in accessions if accession == "AC243794.3" or accession == "AC243881.3"]
+
+rule all:
+    input: "liftover.chain", "liftover.bed"
+
+# Create lift over from reference to BACs.
+rule convert_liftover_psl_to_bed:
+    input: "liftover.psl"
+    output: "liftover.bed"
+    params: sge_opts=""
+    shell: "pslToBed {input} {output}"
+
+rule convert_liftover_chain_to_psl:
+    input: "liftover.chain", config["chromosome_info"], "clones.chromInfo", config["reference_2bit"], "clones.2bit"
+    output: "liftover.psl"
+    params: sge_opts=""
+    shell: "chainToPsl {input} {output}"
+
+rule subset_net_chains:
+    input: "clones.syntenic.filtered.net", "merged_alignments.sorted.antirepeat.filtered.chain"
+    output: "liftover.chain"
+    params: sge_opts=""
+    shell: "netChainSubset -skipMissing -wholeChains {input} {output}"
+
+rule filter_nets:
+    input: "clones.syntenic.net"
+    output: "clones.syntenic.filtered.net"
+    params: sge_opts=""
+    shell: "netFilter -syn -minScore=1000000 {input} > {output}"
+
+rule annotate_synteny_for_nets:
+    input: "clones.net"
+    output: "clones.syntenic.net"
+    params: sge_opts=""
+    shell: "netSyntenic {input} {output}"
+
+rule net_chains:
+    input: "merged_alignments.sorted.antirepeat.filtered.chain", config["chromosome_info"], "clones.chromInfo"
+    output: "reference.net", "clones.net"
+    params: sge_opts=""
+    shell: "chainNet {input} {output}"
+
+rule filter_chains:
+    input: "merged_alignments.sorted.antirepeat.chain", config["chromosome_info"], "clones.chromInfo"
+    output: "merged_alignments.sorted.antirepeat.filtered.chain"
+    params: sge_opts=""
+    shell: "chainPreNet {input} {output}"
+
+rule anti_repeat_chains:
+    input: config["reference_2bit"], "clones.2bit", "merged_alignments.sorted.chain"
+    output: "merged_alignments.sorted.antirepeat.chain"
+    params: sge_opts=""
+    shell: "chainAntiRepeat -minScore=1000 {input} {output}"
+
+rule sort_chains:
+    input: "merged_alignments.chain"
+    output: "merged_alignments.sorted.chain"
+    params: sge_opts=""
+    shell: "chainSort {input} {output}"
+
+rule chain_alignments:
+    input: "merged_alignments.psl", config["reference_2bit"], "clones.2bit"
+    output: "merged_alignments.chain"
+    params: sge_opts=""
+    shell: "axtChain -linearGap=medium -psl {input} {output}"
+
+rule merge_psl:
+    input: expand("psl/{chromosome}.psl", chromosome=chromosomes)
+    output: "merged_alignments.psl"
+    params: sge_opts=""
+    shell: "sed '/^#/d' {input} | sort -k 10 > {output}"
+
+rule convert_lav_to_psl:
+    input: "lav/{chromosome}.lav"
+    output: "psl/{chromosome}.psl"
+    params: sge_opts=""
+    shell: "lavToPsl {input} {output}"
+
+rule place_masked_clone:
+    input: target="%s/{chromosome}" % config["chromosomes_dir"], query="clones.fasta"
+    output: lav="lav/{chromosome}.lav"
+    params: sge_opts="-l mfree=4G"
+    shell: "~jlhudd/src/lastz-distrib-1.02.00/src/lastz {input.target} {input.query} --gfextend --chain --gapped --notransition --format=lav > {output.lav}"
+
+rule get_2bit_info:
+    input: "{sequence_set}.2bit"
+    output: "{sequence_set}.chromInfo"
+    params: sge_opts=""
+    shell: "twoBitInfo {input} {output}"
+
+rule create_fasta_for_clones:
+    input: "clones.2bit"
+    output: "clones.fasta"
+    params: sge_opts=""
+    shell: "twoBitToFa {input} {output}"
+
+rule create_2bit_for_clones:
+    input: all_masked
+    output: "clones.2bit"
+    params: sge_opts=""
+    shell: "faToTwoBit {input} {output}"

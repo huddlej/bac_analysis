@@ -1,0 +1,30 @@
+import glob
+import os
+
+configfile: "config.json"
+
+chromosome_fastas = glob.glob("%s/*" % config["chromosomes_dir"])
+#chromosome_fastas = [chromosome_fasta for chromosome_fasta in chromosome_fastas if not "chrUn" in chromosome_fasta]
+chromosomes = [os.path.basename(chromosome_fasta) for chromosome_fasta in chromosome_fastas]
+
+species_name = "bosTau4"
+all_masked = glob.glob("all_masked/*")
+accessions = [os.path.basename(masked_file) for masked_file in all_masked]
+#accessions = accessions[:2]
+accessions = [accession for accession in accessions if accession == "AC243794.3" or accession == "AC243881.3"]
+
+rule all:
+    input: "segmental_duplications_in_bacs.bed"
+
+# Lift over WGAC from reference to BACs.
+rule liftover_segmental_duplications:
+    input: "segmental_duplications.bed", "liftover.chain"
+    output: "segmental_duplications_in_bacs.bed", "segmental_duplications_unmapped_to_bacs.txt"
+    params: sge_opts=""
+    shell: "liftOver -minMatch=0.75 {input} {output}"
+
+rule summarize_segmental_duplications:
+    input: config["segmental_duplications"]
+    output: "segmental_duplications.bed"
+    params: sge_opts=""
+    shell: """awk 'OFS="\\t" {{ if ($6 == "_") {{ strand="-" }} else {{ strand="+" }}; if ($26 > 0.99) {{ color="255,140,0" }} else if ($26 > 0.98 && $26 <= 0.99) {{ color="255,255,0" }} else {{ color="105,105,105" }} score=sprintf("%i", $26 * 1000); print $1,$2,$3,$4,score,strand,$2,$3,color }}' {input} | sort -k 1,1 -k 2,2n > {output}"""

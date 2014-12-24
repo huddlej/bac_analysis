@@ -1,0 +1,60 @@
+import glob
+import os
+
+configfile: "config.json"
+
+chromosome_fastas = glob.glob("%s/*" % config["chromosomes_dir"])
+#chromosome_fastas = [chromosome_fasta for chromosome_fasta in chromosome_fastas if not "chrUn" in chromosome_fasta]
+chromosomes = [os.path.basename(chromosome_fasta) for chromosome_fasta in chromosome_fastas]
+
+species_name = "bosTau4"
+all_masked = glob.glob("all_masked/*")
+accessions = [os.path.basename(masked_file) for masked_file in all_masked]
+accessions = accessions[:1]
+
+rule all:
+    input: "tandem_repeats.bed"
+
+# Find tandem repeats within clones.
+
+rule merge_tandem_repeats:
+    input: expand("tandem_repeats/{accession}.bed", accession=accessions)
+    output: "tandem_repeats.bed"
+    params: sge_opts=""
+    shell: "sort -k 1,1 -k 2,2n {input} > {output}"
+
+rule convert_psl_to_tandem_repeats_bed:
+    input: "psl/{accession}.psl"
+    output: "tandem_repeats/{accession}.bed"
+    params: sge_opts=""
+    shell: "pslToBed {input} {output}"
+
+rule convert_lav_to_psl:
+    input: "lav/{accession}.lav"
+    output: "psl/{accession}.psl"
+    params: sge_opts=""
+    shell: "lavToPsl {input} {output}"
+
+rule place_masked_clone:
+    input: "all_masked/{accession}"
+    output: lav="lav/{accession}.lav", dotplot_tab="dotplot/{accession}.tab", dotplot_pdf="dotplot/{accession}.pdf"
+    params: sge_opts="-l mfree=4G"
+    shell: "~jlhudd/src/lastz-distrib-1.02.00/src/lastz {input} --self --nomirror --gfextend --chain --gapped --notransition --format=lav --rdotplot={output.dotplot_tab} > {output.lav}; Rscript ~jlhudd/fasta_tools/lastz_dotplot.R {output.dotplot_tab} {output.dotplot_pdf}"
+
+rule get_2bit_info:
+    input: "clones.2bit"
+    output: "clones.chromInfo"
+    params: sge_opts=""
+    shell: "twoBitInfo {input} {output}"
+
+rule create_fasta_for_clones:
+    input: "clones.2bit"
+    output: "clones.fasta"
+    params: sge_opts=""
+    shell: "twoBitToFa {input} {output}"
+
+rule create_2bit_for_clones:
+    input: all_masked
+    output: "clones.2bit"
+    params: sge_opts=""
+    shell: "faToTwoBit {input} {output}"
