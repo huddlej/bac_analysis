@@ -1,0 +1,56 @@
+subworkflow sequences:
+    workdir: "../sequences"
+
+all : wins/wssdGE10K_nogap.tab dup_masked accessions_by_clone_id.tab gaps_for_all_accessions.tab wssd_for_all_accessions.tab species.align showseq.out graph1.tab
+
+graph1.tab : wins/5-1_norpt_iden.tab
+	graph_maker.pl $< $@ 5000 5 0
+
+showseq.out : bac.out
+	echo -e "seqname\tlength" > $@
+	sort $< >> $@
+
+species.align : wins/5-1_norpt_iden.tab bac.out
+	perl ~ginger2/bin/align_maker.pl $^ $@
+
+wssd_for_all_accessions.tab : accessions.txt wssd_bases_by_accession.tab
+	join -j 1 -a 1 -e 0 -o 1.1 2.2 -t"	" $^ > $@
+
+wssd_bases_by_accession.tab : wins/wssdGE10K_nogap.tab
+	sed '/_rc/d' $< | awk 'OFS="\t" { print $$1,$$3-$$2 }' | groupBy -i stdin -g 1 -c 2 -o sum > $@
+
+wins/wssdGE10K_nogap.tab : wins/5-1_norpt_iden.tab
+	~jlhudd/wssd/wssdCall_2.sh 0 $(BLASTDB) $(THRESHOLD_5KB) $(THRESHOLD_1KB) 0
+
+wins/5-1_norpt_iden.tab : wins/rd.out
+	~jlhudd/wssd/wssdCall_2.sh 1 $(BLASTDB) 0 0 0
+
+rule calculate_read_depth:
+    input: "post_mega norptgap.tab"
+    output: "wins/rd.out"
+    shell: "mkdir -p $(dir $@); mega_wincln_qual_parser.pl -d $< -s .bo.bo -c -i 94 -e -a 300  -r $(lastword $^) -m 200 -h 200 -p 0.4 -o $@ -q -t > /dev/null;"
+
+rule annotate_gaps_for_all_clones:
+    input: "accessions.txt", "gaps_by_accession.tab"
+    output: "gaps_for_all_accessions.tab"
+    shell: "join -j 1 -a 1 -e 0 -o 1.1 2.2 2.3 -t"	" $^ > $@"
+
+rule get_gaps_in_clones:
+    input: "norptgap.tab", "gaps.tab"
+    output: "gaps_by_accession.tab"
+    shell: "sed '/_rc/d' $(word 2,$^) | sort -k 1,1 | awk 'OFS="\t" { print $$0,$$3-$$2 }' | groupBy -i stdin -g 1 -c 4,4 -o count,sum > $@"
+
+rule build_clone_files:
+    input: "post_mega"
+    output: "norptgap.tab", "gaps.tab", "bac.out"
+    shell: "~jlhudd/wssd/wssdCall_0.sh"
+
+rule post_blast:
+    input: "mega64_out"
+    output: "post_mega"
+    shell: "mkdir -p $@; qsub -N post_wssd_$(SPECIES) -sync y -cwd -q all.q -l h_vmem=4G -pe orte 2-$(CPUS) ~jlhudd/wssd/mega64.sh -p -s $(SPECIES) -b /var/tmp/jlhudd/$(SPECIES)_wssd"
+
+rule blast:
+    input: sequences("all_masked")
+    output: "mega64_out"
+    shell: "mkdir -p {output}; qsub -N wssd_$(SPECIES) -sync y -cwd -q all.q -l h_vmem=4G -pe orte 2-$(CPUS) ~jlhudd/wssd/mega64.sh -s $(SPECIES) -b /var/tmp/jlhudd/$(SPECIES)_wssd"
