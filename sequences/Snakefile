@@ -11,6 +11,9 @@ TRF_PARAMS_OUTPUT = ".".join(TRF_PARAMS.split(" "))
 
 rule all:
     input: expand("all_masked/{accession}", accession=ACCESSIONS)
+    output: "all_masked"
+
+# TODO: make BED file of masked coordinates
 
 rule mask_sequence:
     input: fasta="mask/{accession}.masked", bed="mask/{accession}.windowmasker_intervals.bed"
