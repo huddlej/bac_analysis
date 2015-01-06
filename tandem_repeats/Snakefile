@@ -1,24 +1,19 @@
-import glob
-import os
+configfile: "../config.json"
 
-configfile: "config.json"
+subworkflow sequences:
+    workdir: "../sequences"
 
-chromosome_fastas = glob.glob("%s/*" % config["chromosomes_dir"])
-#chromosome_fastas = [chromosome_fasta for chromosome_fasta in chromosome_fastas if not "chrUn" in chromosome_fasta]
-chromosomes = [os.path.basename(chromosome_fasta) for chromosome_fasta in chromosome_fastas]
-
-species_name = "bosTau4"
-all_masked = glob.glob("all_masked/*")
-accessions = [os.path.basename(masked_file) for masked_file in all_masked]
-accessions = accessions[:1]
-
-rule all:
-    input: "tandem_repeats.bed"
+with open(config["clone_ids"], "r") as clone_ids_fh:
+    ACCESSIONS = [line.rstrip() for line in clone_ids_fh]
 
 # Find tandem repeats within clones.
 
+rule all:
+    input: "tandem_repeats.bed"
+    params: sge_opts=""
+
 rule merge_tandem_repeats:
-    input: expand("tandem_repeats/{accession}.bed", accession=accessions)
+    input: expand("tandem_repeats/{accession}.bed", accession=ACCESSIONS)
     output: "tandem_repeats.bed"
     params: sge_opts=""
     shell: "sort -k 1,1 -k 2,2n {input} > {output}"
@@ -35,8 +30,8 @@ rule convert_lav_to_psl:
     params: sge_opts=""
     shell: "lavToPsl {input} {output}"
 
-rule place_masked_clone:
-    input: "all_masked/{accession}"
+rule self_align_masked_clone:
+    input: sequences("mask/{accession}.all_masked.fasta")
     output: lav="lav/{accession}.lav", dotplot_tab="dotplot/{accession}.tab", dotplot_pdf="dotplot/{accession}.pdf"
     params: sge_opts="-l mfree=4G"
     shell: "~jlhudd/src/lastz-distrib-1.02.00/src/lastz {input} --self --format=lav --rdotplot={output.dotplot_tab} > {output.lav}; Rscript ~jlhudd/fasta_tools/lastz_dotplot.R {output.dotplot_tab} {output.dotplot_pdf}"
@@ -54,10 +49,11 @@ rule create_fasta_for_clones:
     shell: "twoBitToFa {input} {output}"
 
 rule create_2bit_for_clones:
-    input: all_masked
+    input: sequences("all_masked")
     output: "clones.2bit"
     params: sge_opts=""
-    shell: "faToTwoBit {input} {output}"
+    shell: "faToTwoBit {input}/* {output}"
 
 rule clean:
+    params: sge_opts=""
     shell: "rm -rf clones* lav/ dotplot/ psl/ tandem_repeats*"
