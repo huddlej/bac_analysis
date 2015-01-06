@@ -1,7 +1,7 @@
 import glob
 import os
 
-configfile: "config.json"
+configfile: "../config.json"
 
 chromosome_fastas = glob.glob("%s/*" % config["chromosomes_dir"])
 #chromosome_fastas = [chromosome_fasta for chromosome_fasta in chromosome_fastas if not "chrUn" in chromosome_fasta]
@@ -20,7 +20,7 @@ rule all:
 
 # TODO: move this rule to tracks/Snakefile
 rule create_bigbed_for_mRNA:
-    input: "mRNA.named.bed", "clones.chromInfo"
+    input: "mRNA.named.bed", "bacs.chromInfo"
     output: "genes.bb"
     params: sge_opts=""
     shell: "bedToBigBed {input} {output}"""
@@ -77,6 +77,18 @@ rule get_mRNA:
     output: "refMrna.fa.gz"
     params: sge_opts=""
     shell: "wget ftp://hgdownload.cse.ucsc.edu/goldenPath/%s/bigZips/{output}" % species_name
+
+rule get_2bit_info:
+    input: "bacs.2bit"
+    output: "bacs.chromInfo"
+    params: sge_opts=""
+    shell: "twoBitInfo {input} {output}"
+
+rule create_2bit_for_clones:
+    input: "bacs.fasta"
+    output: "bacs.2bit"
+    params: sge_opts=""
+    shell: "faToTwoBit {input} {output}"
 
 rule get_BACs_fasta:
     input: all_masked
