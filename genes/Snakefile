@@ -5,6 +5,7 @@ subworkflow sequences:
 
 rule all:
     input: "mRNA.named.bed"
+    params: sge_opts=""
 
 # Map mRNA sequences to BACs.
 

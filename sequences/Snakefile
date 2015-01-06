@@ -11,25 +11,30 @@ TRF_PARAMS_OUTPUT = ".".join(TRF_PARAMS.split(" "))
 
 rule all_masked:
     input: "all_masked", "wmsk.merged", "rmsk.merged"
+    params: sge_opts=""
 
 rule mask_all_sequences:
     input: expand("mask/{accession}.all_masked.fasta", accession=ACCESSIONS)
     output: "all_masked"
+    params: sge_opts=""
     shell: "mkdir -p {output}; rsync {input} {output}/; rename '.all_masked.fasta' '' {output}/*.fasta"
 
 rule merge_repeatmask_and_windowmask_beds:
     input: "rmsk.merged", "wmsk_only.merged"
     output: "wmsk.merged"
+    params: sge_opts=""
     shell: "sort -k 1,1 -k 2,2n {input} | bedtools merge -i stdin > {output}"
 
 rule merge_windowmask_beds:
     input: expand("mask/{accession}.windowmasker_intervals.bed", accession=ACCESSIONS)
     output: "wmsk_only.merged"
+    params: sge_opts=""
     shell: "sort -k 1,1 -k 2,2n {input} > {output}"
 
 rule merge_repeatmask_beds:
     input: expand("mask/{accession}.out.bed", accession=ACCESSIONS)
     output: "rmsk.merged"
+    params: sge_opts=""
     shell: "sort -k 1,1 -k 2,2n {input} > {output}"
 
 rule mask_sequence:
@@ -80,4 +85,5 @@ rule download_sequences:
     shell: """wget "http://www.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nucleotide&id={wildcards.accession}&complexity=1&rettype=fasta" -O {output}; sed -i '/^>/s/^>.\+/>{wildcards.accession}/' {output}"""
 
 rule clean:
+    params: sge_opts=""
     shell: "rm -rf rawFA mask all_masked wmsk.merged rmsk.merged wmsk_only.merged"
