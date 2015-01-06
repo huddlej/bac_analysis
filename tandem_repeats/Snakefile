@@ -39,7 +39,7 @@ rule place_masked_clone:
     input: "all_masked/{accession}"
     output: lav="lav/{accession}.lav", dotplot_tab="dotplot/{accession}.tab", dotplot_pdf="dotplot/{accession}.pdf"
     params: sge_opts="-l mfree=4G"
-    shell: "~jlhudd/src/lastz-distrib-1.02.00/src/lastz {input} --self --nomirror --gfextend --chain --gapped --notransition --format=lav --rdotplot={output.dotplot_tab} > {output.lav}; Rscript ~jlhudd/fasta_tools/lastz_dotplot.R {output.dotplot_tab} {output.dotplot_pdf}"
+    shell: "~jlhudd/src/lastz-distrib-1.02.00/src/lastz {input} --self --format=lav --rdotplot={output.dotplot_tab} > {output.lav}; Rscript ~jlhudd/fasta_tools/lastz_dotplot.R {output.dotplot_tab} {output.dotplot_pdf}"
 
 rule get_2bit_info:
     input: "clones.2bit"
