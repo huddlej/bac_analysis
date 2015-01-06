@@ -1,24 +1,15 @@
-import glob
-import os
+configfile: "../config.json"
 
-configfile: "config.json"
-
-chromosome_fastas = glob.glob("%s/*" % config["chromosomes_dir"])
-#chromosome_fastas = [chromosome_fasta for chromosome_fasta in chromosome_fastas if not "chrUn" in chromosome_fasta]
-chromosomes = [os.path.basename(chromosome_fasta) for chromosome_fasta in chromosome_fastas]
-
-species_name = "bosTau4"
-all_masked = glob.glob("all_masked/*")
-accessions = [os.path.basename(masked_file) for masked_file in all_masked]
-#accessions = accessions[:2]
-accessions = [accession for accession in accessions if accession == "AC243794.3" or accession == "AC243881.3"]
+subworkflow liftover:
+    workdir: "../liftover"
 
 rule all:
     input: "segmental_duplications_in_bacs.bed"
+    params: sge_opts=""
 
 # Lift over WGAC from reference to BACs.
 rule liftover_segmental_duplications:
-    input: "segmental_duplications.bed", "liftover.chain"
+    input: "segmental_duplications.bed", liftover("liftover.chain")
     output: "segmental_duplications_in_bacs.bed", "segmental_duplications_unmapped_to_bacs.txt"
     params: sge_opts=""
     shell: "liftOver -minMatch=0.75 {input} {output}"
