@@ -10,12 +10,12 @@ TRF_PARAMS = config["trf_params"]
 TRF_PARAMS_OUTPUT = ".".join(TRF_PARAMS.split(" "))
 
 rule all_masked:
-    input: "all_masked.fasta", "wmsk.merged", "rmsk.merged"
+    input: "all_masked", "wmsk.merged", "rmsk.merged"
 
 rule mask_all_sequences:
-    input: expand("all_masked/{accession}", accession=ACCESSIONS)
-    output: "all_masked.fasta"
-    shell: "cat {input} > {output}"
+    input: expand("mask/{accession}.all_masked.fasta", accession=ACCESSIONS)
+    output: "all_masked"
+    shell: "mkdir -p {output}; rsync {input} {output}/; rename '.all_masked.fasta' '' {output}/*.fasta"
 
 rule merge_repeatmask_and_windowmask_beds:
     input: "rmsk.merged", "wmsk_only.merged"
@@ -34,7 +34,7 @@ rule merge_repeatmask_beds:
 
 rule mask_sequence:
     input: fasta="mask/{accession}.masked", bed="mask/{accession}.windowmasker_intervals.bed"
-    output: "all_masked/{accession}"
+    output: "mask/{accession}.all_masked.fasta"
     params: sge_opts=""
     shell: "bedtools maskfasta -fi {input.fasta} -bed {input.bed} -fo {output} -soft"
 
