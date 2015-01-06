@@ -12,6 +12,7 @@ chromosomes = [os.path.basename(chromosome_fasta) for chromosome_fasta in chromo
 
 rule all:
     input: "liftover.chain", "liftover.bed"
+    params: sge_opts=""
 
 # Create lift over from reference to BACs.
 rule convert_liftover_psl_to_bed:
