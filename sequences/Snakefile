@@ -9,12 +9,13 @@ with open(config["clone_ids"], "r") as clone_ids_fh:
 TRF_PARAMS = config["trf_params"]
 TRF_PARAMS_OUTPUT = ".".join(TRF_PARAMS.split(" "))
 
-rule all:
-    input: expand("all_masked/{accession}", accession=ACCESSIONS), "wmsk.merged", "rmsk.merged"
+rule all_masked:
+    input: "all_masked.fasta", "wmsk.merged", "rmsk.merged"
 
 rule mask_all_sequences:
     input: expand("all_masked/{accession}", accession=ACCESSIONS)
-    output: "all_masked"
+    output: "all_masked.fasta"
+    shell: "cat {input} > {output}"
 
 rule merge_repeatmask_and_windowmask_beds:
     input: "rmsk.merged", "wmsk_only.merged"
