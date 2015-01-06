@@ -48,8 +48,7 @@ rule map_mRNA:
     input: index="bacs_index", mrna="mRNA.fasta"
     output: "mRNA.sorted.bam"
     params: sge_opts="-l mfree=4G -pe serial 4"
-    run:
-        shell("gmap -D `pwd` -d {input.index} -B 4 --min-identity=0.99 -t 4 --nofails --npaths=1 -A -f samse {input.mrna} 2> /dev/null | samtools view -Sb -q 30 - | samtools sort - %s" % output[0].rstrip(".bam"))
+    shell: "gmap -D `pwd` -d {input.index} -B 4 --min-identity=0.99 -t 4 --nofails --npaths=1 -A -f samse {input.mrna} 2> /dev/null | samtools view -Sbu -q 30 - | samtools sort -o {output} -O bam -T tmp_sort -"
 
 rule build_GMAP_index:
     input: "bacs.fasta"
