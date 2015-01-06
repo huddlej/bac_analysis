@@ -1,8 +1,8 @@
-subworkflow genes:
-    workdir: "genes"
+subworkflow sequences:
+    workdir: "sequences"
 
-rule create_bigbed_for_mRNA:
-    input: genes("mRNA.named.bed"), genes("bacs.chromInfo")
-    output: "genes.bb"
+rule prepare_sequences:
+    input: sequences("all_masked.fasta")
+    output: "bacs.fasta"
     params: sge_opts=""
-    shell: "bedToBigBed {input} {output}"""
+    shell: "cat {input} > {output}"""
