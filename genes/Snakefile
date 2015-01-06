@@ -1,17 +1,7 @@
-import glob
-import os
-
 configfile: "../config.json"
 
-chromosome_fastas = glob.glob("%s/*" % config["chromosomes_dir"])
-#chromosome_fastas = [chromosome_fasta for chromosome_fasta in chromosome_fastas if not "chrUn" in chromosome_fasta]
-chromosomes = [os.path.basename(chromosome_fasta) for chromosome_fasta in chromosome_fastas]
-
-species_name = "bosTau4"
-all_masked = glob.glob("all_masked/*")
-accessions = [os.path.basename(masked_file) for masked_file in all_masked]
-#accessions = accessions[:2]
-accessions = [accession for accession in accessions if accession == "AC243794.3" or accession == "AC243881.3"]
+subworkflow sequences:
+    workdir: "../sequences"
 
 rule all:
     input: "mRNA.named.bed"
@@ -46,7 +36,7 @@ rule get_refseq_name_by_accession:
 rule get_refseq_lookup_table:
     output: "refLink.txt.gz"
     params: sge_opts=""
-    shell: "wget ftp://hgdownload.cse.ucsc.edu/goldenPath/%s/database/{output}" % species_name
+    shell: "wget ftp://hgdownload.cse.ucsc.edu/goldenPath/%s/database/{output}" % config["species_reference_name"]
 
 rule convert_BAM_to_BED:
     input: "mRNA.sorted.bam"
@@ -76,7 +66,7 @@ rule extract_mRNA:
 rule get_mRNA:
     output: "refMrna.fa.gz"
     params: sge_opts=""
-    shell: "wget ftp://hgdownload.cse.ucsc.edu/goldenPath/%s/bigZips/{output}" % species_name
+    shell: "wget ftp://hgdownload.cse.ucsc.edu/goldenPath/%s/bigZips/{output}" % config["species_reference_name"]
 
 rule get_2bit_info:
     input: "bacs.2bit"
@@ -91,7 +81,7 @@ rule create_2bit_for_clones:
     shell: "faToTwoBit {input} {output}"
 
 rule get_BACs_fasta:
-    input: all_masked
+    input: sequences("all_masked")
     output: "bacs.fasta"
     params: sge_opts=""
-    shell: "cat {input} > {output}"
+    shell: "cat {input}/* > {output}"
