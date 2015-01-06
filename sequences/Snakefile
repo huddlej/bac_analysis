@@ -10,43 +10,73 @@ TRF_PARAMS = config["trf_params"]
 TRF_PARAMS_OUTPUT = ".".join(TRF_PARAMS.split(" "))
 
 rule all:
+    input: expand("all_masked/{accession}", accession=ACCESSIONS), "wmsk.merged", "rmsk.merged"
+
+rule mask_all_sequences:
     input: expand("all_masked/{accession}", accession=ACCESSIONS)
     output: "all_masked"
 
-# TODO: make BED file of masked coordinates
+rule merge_repeatmask_and_windowmask_beds:
+    input: "rmsk.merged", "wmsk_only.merged"
+    output: "wmsk.merged"
+    shell: "sort -k 1,1 -k 2,2n {input} | bedtools merge -i stdin > {output}"
+
+rule merge_windowmask_beds:
+    input: expand("mask/{accession}.windowmasker_intervals.bed", accession=ACCESSIONS)
+    output: "wmsk_only.merged"
+    shell: "sort -k 1,1 -k 2,2n {input} > {output}"
+
+rule merge_repeatmask_beds:
+    input: expand("mask/{accession}.out.bed", accession=ACCESSIONS)
+    output: "rmsk.merged"
+    shell: "sort -k 1,1 -k 2,2n {input} > {output}"
 
 rule mask_sequence:
     input: fasta="mask/{accession}.masked", bed="mask/{accession}.windowmasker_intervals.bed"
     output: "all_masked/{accession}"
+    params: sge_opts=""
     shell: "bedtools maskfasta -fi {input.fasta} -bed {input.bed} -fo {output} -soft"
 
 rule windowmask_intervals_to_bed:
     input: "mask/{accession}.windowmasker_intervals.txt"
     output: "mask/{accession}.windowmasker_intervals.bed"
+    params: sge_opts=""
     shell: """sed 1d {input} | awk 'OFS="\\t" {{ print "{wildcards.accession}",$1,$3 }}' > {output}"""
 
 rule windowmask_intervals:
     input: counts="mask/{accession}.windowmasker_counts.txt", sequence="mask/{accession}.trf.mask"
     output: "mask/{accession}.windowmasker_intervals.txt"
+    params: sge_opts=""
     shell: "~jlhudd/pipelines/repeatmask/windowmasker -ustat {input.counts} -in {input.sequence} -out {output} -outfmt interval -dust true"
 
 rule windowmask_counts:
     input: "mask/{accession}.trf.mask"
     output: "mask/{accession}.windowmasker_counts.txt"
+    params: sge_opts=""
     shell: "~jlhudd/pipelines/repeatmask/windowmasker -mk_counts -fa_list false -in {input} -checkdup true -out {output}"
 
 rule tandem_repeat_finder:
     input: "mask/{accession}.masked"
     output: "mask/{accession}.trf.mask"
+    params: sge_opts=""
     shell: "cd `dirname {input}`; trf ../{input} {TRF_PARAMS} -m; mv ../{input}.{TRF_PARAMS_OUTPUT}.mask ../{output}; rm -f ../`dirname {output}`/{wildcards.accession}*.html"
+
+rule convert_repeatmasker_gff_to_bed:
+    input: "mask/{accession}.out.gff"
+    output: "mask/{accession}.out.bed",
+    params: sge_opts=""
+    shell: "sed '/^#/d' {input} | cut -f 1,4,5 | sort -k 1,1 -k 2,2n | bedtools merge -i stdin > {output}"
 
 rule repeatmask_sequences:
     input: "rawFA/{accession}"
-    output: "mask/{accession}.masked"
+    output: "mask/{accession}.masked", "mask/{accession}.out.gff"
     params: sge_opts=""
-    shell: """RepeatMasker -no_is -xsmall -q -e wublast -species "{SPECIES}" -dir `dirname {output}` {input}; rm -f `dirname {output}`/{wildcards.accession}.{{cat,out,ref,tbl}}"""
+    shell: """RepeatMasker -gff -no_is -xsmall -q -e wublast -species "{SPECIES}" -dir `dirname {output[0]}` {input}; rm -f `dirname {output[0]}`/{wildcards.accession}.{{cat,out,ref,tbl}}"""
 
 rule download_sequences:
     output: "rawFA/{accession}"
     params: sge_opts=""
     shell: """wget "http://www.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nucleotide&id={wildcards.accession}&complexity=1&rettype=fasta" -O {output}; sed -i '/^>/s/^>.\+/>{wildcards.accession}/' {output}"""
+
+rule clean:
+    shell: "rm -rf rawFA mask all_masked wmsk.merged rmsk.merged wmsk_only.merged"
