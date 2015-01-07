@@ -1,7 +1,6 @@
 configfile: "../config.json"
 
 SPECIES_NAME = config["common_species_name"]
-BLAST_DB = config["wssd_blast_database"]
 WSSD_THRESHOLD_5KB = config["wssd_threshold_5kb"]
 WSSD_THRESHOLD_1KB = WSSD_THRESHOLD_5KB / 5
 
@@ -22,12 +21,12 @@ rule parasight_graph:
     shell: "graph_maker.pl {input} {output} 5000 5 0"
 
 rule parasight_sequences:
-    input: "bac.out"
+    input: sequences("bac.out")
     output: "showseq.out"
     shell: """echo -e "seqname\\tlength" > {output}; sort {input} >> {output}"""
 
 rule parasight_alignment:
-    input: "wins/5-1_norpt_iden.tab", "bac.out"
+    input: "wins/5-1_norpt_iden.tab", sequences("bac.out")
     output: "species.align"
     shell: "perl ~ginger2/bin/align_maker.pl {input} {output}"
 
@@ -41,18 +40,43 @@ rule wssd_bases_by_accession:
     output: "wssd_bases_by_accession.tab"
     shell: """sed '/_rc/d' {input} | awk 'OFS="\\t" {{ print $1,$3-$2 }}' | groupBy -i stdin -g 1 -c 2 -o sum > {output}"""
 
-rule call_wssd:
-    input: "wins/5-1_norpt_iden.tab"
+rule remove_gaps_from_wssd:
+    input: wssd="wins/wssdGE10K.tab", gaps=sequences("gaps.tab")
     output: "wins/wssdGE10K_nogap.tab"
-    shell: "~jlhudd/wssd/wssdCall_2.sh 0 {BLAST_DB} {WSSD_THRESHOLD_5KB} {WSSD_THRESHOLD_1KB} 0"
+    shell: "twoPartOvp_mgsrt.pl -i {input.wssd} -f -j {input.gaps} -t -L -o {output}"
 
-rule calculate_depth_in_windows:
-    input: "wins/rd.out"
-    output: "wins/5-1_norpt_iden.tab", "wins/1-1_norpt_iden.tab"
-    shell: "~jlhudd/wssd/wssdCall_2.sh 1 {BLAST_DB} 0 0 0"
+rule filter_wssd_by_size:
+    input: "wins/wssd.merged"
+    output: "wins/wssdGE10K.tab"
+    shell: "awk '$3 - $2 >= 10000' {input} > {output}"
+
+rule merge_wssd_windows:
+    input: "wins/wssd.tab"
+    output: "wins/wssd.merged"
+    shell: "coordsMerger_sort.pl -i {input} -h -u -n 0 -b 1 -e 2 -o {output}"
+
+rule pick_wssd_windows:
+    input: threshold_5kb="wins/5-1_norpt_iden.tab", threshold_1kb="wins/1-1_norpt_iden.tab"
+    output: "wins/wssd.tab"
+    shell: "wssd_picker.pl -f {input.threshold_5kb} -w 7 -s 6 -c {WSSD_THRESHOLD_5KB} -b 3 -k {input.threshold_1kb} -n 5 -i 1 -t {WSSD_THRESHOLD_1KB} -o {output}"
+
+rule calculate_depth_stats:
+    input: "wins/5-1_norpt_iden.tab"
+    output: "wins/depth_stats.txt"
+    shell: """cut -f 4 {input} | grep -P "^\d+$" | statStd.pl > {output}"""
+
+rule calculate_depth_in_1kb_windows:
+    input: depth="wins/rd.out", sizes=sequences("bac.out"), nonrepeats=sequences("norptgap.tab")
+    output: "wins/1-1_norpt_iden.tab"
+    shell: "windowTracks_ovp.pl -w 1 -s 1 -a {input.sizes} -i {input.nonrepeats} -f -k {input.depth} -t -e -y 3 -g 4 -o {output} > /dev/null"
+
+rule calculate_depth_in_5kb_windows:
+    input: depth="wins/rd.out", sizes=sequences("bac.out"), nonrepeats=sequences("norptgap.tab")
+    output: "wins/5-1_norpt_iden.tab"
+    shell: "windowTracks_ovp.pl -w 5 -s 1 -a {input.sizes} -i {input.nonrepeats} -f -k {input.depth} -t -e -y 3 -g 4 -o {output} > /dev/null"
 
 rule calculate_read_depth:
-    input: "post_mega", "norptgap.tab"
+    input: "post_mega", sequences("norptgap.tab")
     output: "wins/rd.out"
     shell: "mkdir -p $(dirname {output}); mega_wincln_qual_parser.pl -d {input[0]} -s .bo.bo -c -i 94 -e -a 300 -r {input[1]} -m 200 -h 200 -p 0.4 -o {output} -q -t > /dev/null;"
 
@@ -62,14 +86,9 @@ rule annotate_gaps_for_all_clones:
     shell: """join -j 1 -a 1 -e 0 -o 1.1 2.2 2.3 -t"	" {input} > {output}"""
 
 rule get_gaps_in_clones:
-    input: "gaps.tab"
+    input: sequences("gaps.tab")
     output: "gaps_by_accession.tab"
     shell: """sed '/_rc/d' {input} | sort -k 1,1 | awk 'OFS="\\t" {{ print $0,$3-$2 }}' | groupBy -i stdin -g 1 -c 4,4 -o count,sum > {output}"""
-
-rule build_clone_files:
-    input: "post_mega"
-    output: "norptgap.tab", "gaps.tab", "bac.out"
-    shell: "~jlhudd/wssd/wssdCall_0.sh"
 
 rule post_blast:
     input: "mega64_out"
