@@ -10,8 +10,23 @@ TRF_PARAMS = config["trf_params"]
 TRF_PARAMS_OUTPUT = ".".join(TRF_PARAMS.split(" "))
 
 rule all_masked:
-    input: "all_masked", "wmsk.merged", "rmsk.merged"
+    input: "all_masked", "wmsk.merged", "rmsk.merged", "bac.out", "gaps.tab", "norptgap.tab"
     params: sge_opts=""
+
+rule find_non_repeat_and_gap_positions:
+    input: repeats="wmsk.merged", gaps="gaps.tab", sizes="bac.out"
+    output: "norptgap.tab"
+    shell: "sort -k 1,1 -k 2,2n {input.repeats} {input.gaps} | bedtools merge -i stdin -d 1 | bedtools complement -i stdin -g {input.sizes} > {output}"
+
+rule merge_gaps:
+    input: expand("gaps/{accession}.bed", accession=ACCESSIONS)
+    output: "gaps.tab"
+    shell: "sort -k 1,1 -k 2,2n {input} > {output}"
+
+rule merge_sequence_indices:
+    input: expand("rawFA/{accession}.fai", accession=ACCESSIONS)
+    output: "bac.out"
+    shell: "sort -k 1,1 {input} > {output}"
 
 rule mask_all_sequences:
     input: expand("mask/{accession}.all_masked.fasta", accession=ACCESSIONS)
