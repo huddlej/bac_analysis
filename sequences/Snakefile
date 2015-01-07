@@ -94,8 +94,20 @@ rule repeatmask_sequences:
     params: sge_opts=""
     shell: """RepeatMasker -gff -no_is -xsmall -q -e wublast -species "{SPECIES}" -dir `dirname {output[0]}` {input}; rm -f `dirname {output[0]}`/{wildcards.accession}.{{cat,out,ref,tbl}}"""
 
+rule find_gaps:
+    input: "rawFA/{accession}"
+    output: "gaps/{accession}.bed"
+    params: sge_opts=""
+    shell: "python ~jlhudd/fasta_tools/find_gaps.py {input} | bedtools merge -i stdin -d 1 > {output}"
+
+rule index_sequences:
+    input: "rawFA/{accession}"
+    output: "rawFA/{accession}.fai"
+    params: sge_opts=""
+    shell: "samtools faidx {input}"
+
 rule download_sequences:
-    output: "rawFA/{accession}"
+    output: "rawFA/{accession,\d+.\d}"
     params: sge_opts=""
     shell: """wget "http://www.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nucleotide&id={wildcards.accession}&complexity=1&rettype=fasta" -O {output}; sed -i '/^>/s/^>.\+/>{wildcards.accession}/' {output}"""
 
