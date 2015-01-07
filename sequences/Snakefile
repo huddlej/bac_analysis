@@ -86,7 +86,7 @@ rule convert_repeatmasker_gff_to_bed:
     input: "mask/{accession}.out.gff"
     output: "mask/{accession}.out.bed",
     params: sge_opts=""
-    shell: "sed '/^#/d' {input} | cut -f 1,4,5 | sort -k 1,1 -k 2,2n | bedtools merge -i stdin > {output}"
+    shell: """sed '/^#/d' {input} | awk 'OFS="\\t" {{ print $1,$4 - 1,$5 }}' | sort -k 1,1 -k 2,2n | bedtools merge -i stdin -d 1 > {output}"""
 
 rule repeatmask_sequences:
     input: "rawFA/{accession}"
