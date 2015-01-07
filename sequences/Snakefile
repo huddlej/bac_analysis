@@ -38,7 +38,7 @@ rule merge_repeatmask_and_windowmask_beds:
     input: "rmsk.merged", "wmsk_only.merged"
     output: "wmsk.merged"
     params: sge_opts=""
-    shell: "sort -k 1,1 -k 2,2n {input} | bedtools merge -i stdin > {output}"
+    shell: "sort -k 1,1 -k 2,2n {input} | bedtools merge -i stdin -d 1 > {output}"
 
 rule merge_windowmask_beds:
     input: expand("mask/{accession}.windowmasker_intervals.bed", accession=ACCESSIONS)
