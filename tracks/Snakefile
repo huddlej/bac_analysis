@@ -1,0 +1,11 @@
+subworkflow sequences:
+    workdir: "../sequences"
+
+subworkflow segmental_duplications:
+    workdir: "../segmental_duplications"
+
+rule segmental_duplications:
+    input: segmental_duplications("segmental_duplications_in_bacs.bed"), sequences("bac.out")
+    output: "segmental_duplications.bb"
+    params: sge_opts=""
+    shell: "bedToBigBed {input} {output}"
