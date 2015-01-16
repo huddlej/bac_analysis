@@ -8,7 +8,7 @@ subworkflow genes:
     workdir: "genes"
 
 rule all:
-    input: "tandem_repeats.bed", "segmental_duplications_in_bacs.bed" #, "genes.bb"
+    input: "tandem_repeats_per_clone.bed", "segmental_duplications_in_bacs.bed" #, "genes.bb"
 
 rule genes:
     input: genes("mRNA.named.bed"), genes("bacs.chromInfo")
@@ -24,5 +24,5 @@ rule segmental_duplications:
 
 rule tandem_repeats:
     input: tandem_repeats("tandem_repeats.bed")
-    output: "tandem_repeats.bed"
-    shell: "ln -s {input} {output}"
+    output: "tandem_repeats_per_clone.bed"
+    shell: """awk 'OFS="\\t" {{ print $1,$3-$2 }}' {input} | groupBy -i stdin -g 1 -c 2 -o sum > {output}"""
