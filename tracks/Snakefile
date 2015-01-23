@@ -1,3 +1,5 @@
+TRACKS = ("segmental_duplications", "genes", "wssd")
+
 subworkflow sequences:
     workdir: "../sequences"
 
@@ -11,7 +13,7 @@ subworkflow wssd:
     workdir: "../wssd"
 
 rule trackdefs:
-    input: expand("{track}.trackDb.txt", track=("segmental_duplications", "genes"))
+    input: expand("{track}.trackDb.txt", track=TRACKS)
     output: "trackDb.txt"
     shell: "cat {input} > {output}"
 
