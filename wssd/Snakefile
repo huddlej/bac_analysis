@@ -13,7 +13,7 @@ subworkflow sequences:
     workdir: "../sequences"
 
 rule all:
-    input: "wins/wssdGE10K_nogap.tab", "gaps_for_all_accessions.tab", "wssd_for_all_accessions.tab", "species.align", "showseq.out", "graph1.tab"
+    input: "wins/wssdGE10K_nogap.tab", "wssd_for_all_accessions.tab", "species.align", "showseq.out", "graph1.tab"
 
 rule parasight_graph:
     input: "wins/5-1_norpt_iden.tab"
