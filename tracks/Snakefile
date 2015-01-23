@@ -92,7 +92,7 @@ group genes
 """
 
 rule genes:
-    input: genes("mRNA.named.bed"), genes("bacs.chromInfo")
+    input: genes("mRNA.named.bed"), sequences("bac.out")
     output: "genes.bb"
     params: sge_opts=""
     shell: "bedToBigBed {input} {output}"
