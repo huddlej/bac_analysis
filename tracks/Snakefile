@@ -4,8 +4,49 @@ subworkflow sequences:
 subworkflow segmental_duplications:
     workdir: "../segmental_duplications"
 
+subworkflow genes:
+    workdir: "../genes"
+
+rule trackdefs:
+    input: expand("{track}.trackDb.txt", track=("segmental_duplications", "genes"))
+    output: "trackDb.txt"
+    shell: "cat {input} > {output}"
+
+rule segmental_duplications_trackdef:
+    input: "segmental_duplications.bb"
+    output: "segmental_duplications.trackDb.txt"
+    params: sge_opts=""
+    shell: """echo "track wgac
+shortLabel Segmental duplications
+longLabel Segmental duplications
+type bigBed 9
+bigDataUrl {input}
+itemRgb on
+group duplications
+" > {output}
+"""
+
 rule segmental_duplications:
     input: segmental_duplications("segmental_duplications_in_bacs.bed"), sequences("bac.out")
     output: "segmental_duplications.bb"
+    params: sge_opts=""
+    shell: "bedToBigBed {input} {output}"
+
+rule genes_trackdef:
+    input: "genes.bb"
+    output: "genes.trackDb.txt"
+    params: sge_opts=""
+    shell: """echo "track genes
+shortLabel Genes
+longLabel Genes
+type bigBed 12
+bigDataUrl {input}
+group genes
+" > {output}
+"""
+
+rule genes:
+    input: genes("mRNA.named.bed"), genes("bacs.chromInfo")
+    output: "genes.bb"
     params: sge_opts=""
     shell: "bedToBigBed {input} {output}"
