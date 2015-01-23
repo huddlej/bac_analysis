@@ -1,4 +1,4 @@
-TRACKS = ("segmental_duplications", "genes", "wssd", "tandem_repeats")
+TRACKS = ("gaps", "segmental_duplications", "genes", "wssd", "tandem_repeats")
 
 subworkflow sequences:
     workdir: "../sequences"
@@ -94,5 +94,24 @@ group genes
 rule genes:
     input: genes("mRNA.named.bed"), genes("bacs.chromInfo")
     output: "genes.bb"
+    params: sge_opts=""
+    shell: "bedToBigBed {input} {output}"
+
+rule gaps_trackdef:
+    input: "gaps.bb"
+    output: "gaps.trackDb.txt"
+    params: sge_opts=""
+    shell: """echo "track gaps
+shortLabel Gaps
+longLabel Gaps
+type bigBed 3
+bigDataUrl {input}
+group map
+" > {output}
+"""
+
+rule gaps_bigbed:
+    input: sequences("gaps.tab"), sequences("bac.out")
+    output: "gaps.bb"
     params: sge_opts=""
     shell: "bedToBigBed {input} {output}"
