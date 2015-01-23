@@ -7,10 +7,32 @@ subworkflow segmental_duplications:
 subworkflow genes:
     workdir: "../genes"
 
+subworkflow wssd:
+    workdir: "../wssd"
+
 rule trackdefs:
     input: expand("{track}.trackDb.txt", track=("segmental_duplications", "genes"))
     output: "trackDb.txt"
     shell: "cat {input} > {output}"
+
+rule wssd_duplications_trackdef:
+    input: "wssd.bb"
+    output: "wssd.trackDb.txt"
+    params: sge_opts=""
+    shell: """echo "track wssd
+shortLabel WSSD
+longLabel WSSD
+type bigBed 3
+bigDataUrl {input}
+group duplications
+" > {output}
+"""
+
+rule wssd_duplications:
+    input: wssd("wins/wssdGE10K_nogap.tab"), sequences("bac.out")
+    output: "wssd.bb"
+    params: sge_opts=""
+    shell: "bedToBigBed {input} {output}"
 
 rule segmental_duplications_trackdef:
     input: "segmental_duplications.bb"
