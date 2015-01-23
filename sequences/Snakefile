@@ -9,8 +9,8 @@ with open(config["clone_ids"], "r") as clone_ids_fh:
 TRF_PARAMS = config["trf_params"]
 TRF_PARAMS_OUTPUT = ".".join(TRF_PARAMS.split(" "))
 
-rule all_masked:
-    input: "all_masked", "wmsk.merged", "rmsk.merged", "bac.out", "gaps.tab", "norptgap.tab", "gaps_for_all_accessions.tab"
+rule all:
+    input: "all_masked", "rmsk.combined.bed", "wmsk.merged", "rmsk.merged", "bac.out", "gaps.tab", "norptgap.tab", "gaps_for_all_accessions.tab"
     params: sge_opts=""
 
 rule find_non_repeat_and_gap_positions:
@@ -57,10 +57,16 @@ rule merge_windowmask_beds:
     shell: "sort -k 1,1 -k 2,2n {input} > {output}"
 
 rule merge_repeatmask_beds:
-    input: expand("mask/{accession}.out.bed", accession=ACCESSIONS)
+    input: "rmsk.combined.bed"
     output: "rmsk.merged"
     params: sge_opts=""
-    shell: "sort -k 1,1 -k 2,2n {input} > {output}"
+    shell: "bedtools merge -i {input} -d 1 > {output}"
+
+rule combine_repeatmask_beds:
+    input: expand("mask/{accession}.out.bed", accession=ACCESSIONS)
+    output: "rmsk.combined.bed"
+    params: sge_opts=""
+    shell: "sort -k 1,1 -k 2,2n -m {input} > {output}"
 
 rule mask_sequence:
     input: fasta="mask/{accession}.masked", bed="mask/{accession}.windowmasker_intervals.bed"
