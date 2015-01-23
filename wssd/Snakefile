@@ -33,7 +33,7 @@ rule parasight_alignment:
 rule wssd_for_all_accessions:
     input: config["clone_ids"], "wssd_bases_by_accession.tab"
     output: "wssd_for_all_accessions.tab"
-    shell: """join -j 1 -a 1 -e 0 -o 1.1 2.2 -t"	" {input} > {output}"""
+    shell: """join -j 1 -a 1 -e 0 -o 1.1 2.2 -t"	" {input} | awk 'OFS="\\t" {{ if (NR == 1) {{ print "accession","wssd" }} print }}' > {output}"""
 
 rule wssd_bases_by_accession:
     input: "wins/wssdGE10K_nogap.tab"
