@@ -21,7 +21,7 @@ rule find_non_repeat_and_gap_positions:
 rule annotate_gaps_for_all_clones:
     input: config["clone_ids"], "gaps_by_accession.tab"
     output: "gaps_for_all_accessions.tab"
-    shell: """join -j 1 -a 1 -e 0 -o 1.1 2.2 2.3 -t"	" {input} > {output}"""
+    shell: """join -j 1 -a 1 -e 0 -o 1.1 2.2 2.3 -t"	" {input} | awk 'OFS="\\t" {{ if (NR == 1) {{ print "accession","gaps","gap_bases" }} print }}' > {output}"""
 
 rule get_gaps_in_clones:
     input: "gaps.tab"
