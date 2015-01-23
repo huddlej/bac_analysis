@@ -1,4 +1,4 @@
-TRACKS = ("segmental_duplications", "genes", "wssd")
+TRACKS = ("segmental_duplications", "genes", "wssd", "tandem_repeats")
 
 subworkflow sequences:
     workdir: "../sequences"
@@ -12,10 +12,32 @@ subworkflow genes:
 subworkflow wssd:
     workdir: "../wssd"
 
+subworkflow tandem_repeats:
+    workdir: "../tandem_repeats"
+
 rule trackdefs:
     input: expand("{track}.trackDb.txt", track=TRACKS)
     output: "trackDb.txt"
     shell: "cat {input} > {output}"
+
+rule tandem_repeats_trackdef:
+    input: "tandem_repeats.bb"
+    output: "tandem_repeats.trackDb.txt"
+    params: sge_opts=""
+    shell: """echo "track tandem_repeats
+shortLabel Tandem repeats
+longLabel Tandem repeats
+type bigBed 12
+bigDataUrl {input}
+group duplications
+" > {output}
+"""
+
+rule tandem_repeats_bigbed:
+    input: tandem_repeats("tandem_repeats.bed"), sequences("bac.out")
+    output: "tandem_repeats.bb"
+    params: sge_opts=""
+    shell: "bedToBigBed {input} {output}"
 
 rule wssd_duplications_trackdef:
     input: "wssd.bb"
