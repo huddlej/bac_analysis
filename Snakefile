@@ -27,7 +27,7 @@ rule genes:
     input: genes("mRNA.named.bed"), genes("bacs.chromInfo")
     output: "genes.bb"
     params: sge_opts=""
-    shell: "bedToBigBed {input} {output}"""
+    shell: "bedToBigBed {input} {output}"
 
 rule segmental_duplications:
     input: segmental_duplications("segmental_duplications_in_bacs.bed")
