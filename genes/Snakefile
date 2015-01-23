@@ -9,13 +9,6 @@ rule all:
 
 # Map mRNA sequences to BACs.
 
-# TODO: move this rule to tracks/Snakefile
-rule create_bigbed_for_mRNA:
-    input: "mRNA.named.bed", "bacs.chromInfo"
-    output: "genes.bb"
-    params: sge_opts=""
-    shell: "bedToBigBed {input} {output}"""
-
 rule genes_for_all_accessions:
     input: config["clone_ids"], "genes_by_accession.tab"
     output: "genes_for_all_accessions.tab"
@@ -78,12 +71,6 @@ rule get_mRNA:
     output: "refMrna.fa.gz"
     params: sge_opts=""
     shell: "wget ftp://hgdownload.cse.ucsc.edu/goldenPath/%s/bigZips/{output}" % config["species_reference_name"]
-
-rule get_2bit_info:
-    input: "bacs.2bit"
-    output: "bacs.chromInfo"
-    params: sge_opts=""
-    shell: "twoBitInfo {input} {output}"
 
 rule create_2bit_for_clones:
     input: "bacs.fasta"
