@@ -4,7 +4,7 @@ subworkflow sequences:
     workdir: "../sequences"
 
 rule all:
-    input: "mRNA.named.bed"
+    input: "mRNA.named.bed", "genes_for_all_accessions.tab"
     params: sge_opts=""
 
 # Map mRNA sequences to BACs.
@@ -15,6 +15,17 @@ rule create_bigbed_for_mRNA:
     output: "genes.bb"
     params: sge_opts=""
     shell: "bedToBigBed {input} {output}"""
+
+rule genes_for_all_accessions:
+    input: config["clone_ids"], "genes_by_accession.tab"
+    output: "genes_for_all_accessions.tab"
+    shell: """join -j 1 -a 1 -e 0 -o 1.1 2.2 -t"	" {input} | awk 'OFS="\\t" {{ if (NR == 1) {{ print "accession","total_genes" }} print }}' > {output}"""
+
+rule genes_by_accession:
+    input: "mRNA.named.bed"
+    output: "genes_by_accession.tab"
+    params: sge_opts=""
+    shell: "cut -f 1,4 {input} | sort -k 1,1 -k 2,2 | uniq | groupBy -i stdin -g 1 -c 2 -o count > {output}"
 
 rule get_name_for_mRNA_accession:
     input: "mRNA_by_accession.bed", "refseq_name_by_accession.tab"
