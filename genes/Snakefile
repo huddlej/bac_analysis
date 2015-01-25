@@ -1,18 +1,18 @@
-configfile: "../config.json"
-
-subworkflow sequences:
-    workdir: "../sequences"
-
-rule all:
-    input: "mRNA.named.bed", "genes_for_all_accessions.tab"
-    params: sge_opts=""
+configfile: "./config.json"
 
 # Map mRNA sequences to BACs.
+
+rule duplicated_genes:
+    input: genes="mRNA.named.bed", wssd="wins/wssdGE10K_nogap.tab"
+    output: "duplicated_genes_per_accession.tab"
+    params: sge_opts=""
+    shell: "bedtools intersect -a {input.genes} -b {input.wssd} -wa | cut -f 1,4 | sort -k 1,1 -k 2,2 | uniq > {output}"
 
 rule genes_for_all_accessions:
     input: config["clone_ids"], "genes_by_accession.tab"
     output: "genes_for_all_accessions.tab"
-    shell: """join -j 1 -a 1 -e 0 -o 1.1 2.2 -t"	" {input} | awk 'OFS="\\t" {{ if (NR == 1) {{ print "accession","total_genes" }} print }}' > {output}"""
+    params: sge_opts=""
+    shell: """join -j 1 -a 1 -e 0 -o 1.1 2.2 -t"	" {input} | cut -f 2 | awk 'OFS="\\t" {{ if (NR == 1) {{ print "total_genes" }} print }}' > {output}"""
 
 rule genes_by_accession:
     input: "mRNA.named.bed"
@@ -56,10 +56,11 @@ rule map_mRNA:
     shell: "gmap -D `pwd` -d {input.index} -B 4 --min-identity=0.99 -t 4 --nofails --npaths=1 -A -f samse {input.mrna} 2> /dev/null | samtools view -Sbu -q 30 - | samtools sort -o {output} -O bam -T tmp_sort -"
 
 rule build_GMAP_index:
-    input: "bacs.fasta"
+    input: "clones.fasta"
     output: "bacs_index"
     params: sge_opts="-l mfree=5G"
-    shell: "gmap_build -D `pwd` -d {output} -k 15 -b 12 {input}"
+    log: "gmap_build.log"
+    shell: "gmap_build -D `pwd` -d {output} -k 15 -b 12 {input} &> {log}"
 
 rule extract_mRNA:
     input: "refMrna.fa.gz"
@@ -71,15 +72,3 @@ rule get_mRNA:
     output: "refMrna.fa.gz"
     params: sge_opts=""
     shell: "wget ftp://hgdownload.cse.ucsc.edu/goldenPath/%s/bigZips/{output}" % config["species_reference_name"]
-
-rule create_2bit_for_clones:
-    input: "bacs.fasta"
-    output: "bacs.2bit"
-    params: sge_opts=""
-    shell: "faToTwoBit {input} {output}"
-
-rule get_BACs_fasta:
-    input: sequences("all_masked")
-    output: "bacs.fasta"
-    params: sge_opts=""
-    shell: "cat {input}/* > {output}"

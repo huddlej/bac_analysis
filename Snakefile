@@ -1,28 +1,20 @@
-subworkflow sequences:
-    workdir: "sequences"
-
-subworkflow tandem_repeats:
-    workdir: "tandem_repeats"
-
-subworkflow segmental_duplications:
-    workdir: "segmental_duplications"
-
-subworkflow genes:
-    workdir: "genes"
-
-subworkflow wssd:
-    workdir: "wssd"
+include: "sequences/Snakefile"
+include: "tandem_repeats/Snakefile"
+include: "segmental_duplications/Snakefile"
+include: "genes/Snakefile"
+include: "wssd/Snakefile"
 
 rule all:
     input: "annotations_per_accession.tab", "duplicated_genes_per_accession.tab"
     params: sge_opts=""
 
 rule combine_reports:
-    input: sequences("gaps_for_all_accessions.tab"), wssd("wssd_for_all_accessions.tab"), tandem_repeats("tandem_repeats_for_all_accessions.tab"), genes("genes_for_all_accessions.tab"), segmental_duplications("segmental_duplications_for_all_accessions.tab")
+    input: "clone_ids_summary.txt", "gaps_for_all_accessions.tab", "tandem_repeats_for_all_accessions.tab", "segmental_duplications_for_all_accessions.tab", "genes_for_all_accessions.tab", "wssd_for_all_accessions.tab"
     output: "annotations_per_accession.tab"
+    params: sge_opts=""
     shell: "paste {input} > {output}"
 
-rule duplicated_genes:
-    input: genes=genes("mRNA.named.bed"), wssd=wssd("wins/wssdGE10K_nogap.tab")
-    output: "duplicated_genes_per_accession.tab"
-    shell: "bedtools intersect -a {input.genes} -b {input.wssd} -wa | cut -f 1,4 | sort -k 1,1 -k 2,2 | uniq > {output}"
+rule build_clone_ids_column:
+    input: config["clone_ids"]
+    output: "clone_ids_summary.txt"
+    shell: """awk '{{ if (NR == 1) {{ print "clone_id" }} print }}' {input} > {output}"""

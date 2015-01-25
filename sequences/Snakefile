@@ -1,5 +1,5 @@
 
-configfile: "../config.json"
+configfile: "./config.json"
 
 SPECIES = config["full_species_name"]
 
@@ -9,9 +9,23 @@ with open(config["clone_ids"], "r") as clone_ids_fh:
 TRF_PARAMS = config["trf_params"]
 TRF_PARAMS_OUTPUT = ".".join(TRF_PARAMS.split(" "))
 
-rule all:
-    input: "all_masked", "rmsk.combined.bed", "wmsk.merged", "rmsk.merged", "bac.out", "gaps.tab", "norptgap.tab", "gaps_for_all_accessions.tab"
+rule get_2bit_info:
+    input: "clones.2bit"
+    output: "clones.chromInfo"
     params: sge_opts=""
+    shell: "twoBitInfo {input} {output}"
+
+rule create_fasta_for_clones:
+    input: "clones.2bit"
+    output: "clones.fasta"
+    params: sge_opts=""
+    shell: "twoBitToFa {input} {output}"
+
+rule create_2bit_for_clones:
+    input: "all_masked"
+    output: "clones.2bit"
+    params: sge_opts=""
+    shell: "faToTwoBit {input}/* {output}"
 
 rule find_non_repeat_and_gap_positions:
     input: repeats="wmsk.merged", gaps="gaps.tab", sizes="bac.out"
@@ -21,7 +35,7 @@ rule find_non_repeat_and_gap_positions:
 rule annotate_gaps_for_all_clones:
     input: config["clone_ids"], "gaps_by_accession.tab"
     output: "gaps_for_all_accessions.tab"
-    shell: """join -j 1 -a 1 -e 0 -o 1.1 2.2 2.3 -t"	" {input} | awk 'OFS="\\t" {{ if (NR == 1) {{ print "accession","gaps","gap_bases" }} print }}' > {output}"""
+    shell: """join -j 1 -a 1 -e 0 -o 1.1 2.2 2.3 -t"	" {input} | cut -f 2-3 | awk 'OFS="\\t" {{ if (NR == 1) {{ print "gaps","gap_bases" }} print }}' > {output}"""
 
 rule get_gaps_in_clones:
     input: "gaps.tab"
@@ -118,12 +132,12 @@ rule find_gaps:
 
 rule index_sequences:
     input: "rawFA/{accession}"
-    output: "rawFA/{accession,\d+.\d}.fai"
+    output: "rawFA/{accession}.fai"
     params: sge_opts=""
     shell: "samtools faidx {input}"
 
 rule download_sequences:
-    output: "rawFA/{accession}"
+    output: "rawFA/{accession,\d+.\d}"
     params: sge_opts=""
     shell: """wget "http://www.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nucleotide&id={wildcards.accession}&complexity=1&rettype=fasta" -O {output}; sed -i '/^>/s/^>.\+/>{wildcards.accession}/' {output}"""
 

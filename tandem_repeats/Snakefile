@@ -1,21 +1,14 @@
-configfile: "../config.json"
-
-subworkflow sequences:
-    workdir: "../sequences"
+configfile: "./config.json"
 
 with open(config["clone_ids"], "r") as clone_ids_fh:
     ACCESSIONS = [line.rstrip() for line in clone_ids_fh]
 
 # Find tandem repeats within clones.
 
-rule all:
-    input: "tandem_repeats.bed", "tandem_repeats_for_all_accessions.tab"
-    params: sge_opts=""
-
 rule tandem_repeats_for_all_accessions:
     input: config["clone_ids"], "tandem_repeats_by_accession.tab"
     output: "tandem_repeats_for_all_accessions.tab"
-    shell: """join -j 1 -a 1 -e 0 -o 1.1 2.2 -t"	" {input} | awk 'OFS="\\t" {{ if (NR == 1) {{ print "accession","tandem_repeats" }} print }}' > {output}"""
+    shell: """join -j 1 -a 1 -e 0 -o 1.1 2.2 -t"	" {input} | cut -f 2 | awk 'OFS="\\t" {{ if (NR == 1) {{ print "tandem_repeats" }} print }}' > {output}"""
 
 rule tandem_repeats_by_accession:
     input: "tandem_repeats.bed"
@@ -29,41 +22,19 @@ rule merge_tandem_repeats:
     shell: "sort -k 1,1 -k 2,2n {input} > {output}"
 
 rule convert_psl_to_tandem_repeats_bed:
-    input: "psl/{accession}.psl"
+    input: "tandem_repeats_psl/{accession}.psl"
     output: "tandem_repeats/{accession}.bed"
     params: sge_opts=""
     shell: "pslToBed {input} {output}"
 
 rule convert_lav_to_psl:
-    input: "lav/{accession}.lav"
-    output: "psl/{accession}.psl"
+    input: "tandem_repeats_lav/{accession}.lav"
+    output: "tandem_repeats_psl/{accession}.psl"
     params: sge_opts=""
     shell: "lavToPsl {input} {output}"
 
 rule self_align_masked_clone:
-    input: sequences("mask/{accession}.all_masked.fasta")
-    output: lav="lav/{accession}.lav", dotplot_tab="dotplot/{accession}.tab", dotplot_pdf="dotplot/{accession}.pdf"
+    input: "mask/{accession}.all_masked.fasta"
+    output: lav="tandem_repeats_lav/{accession}.lav", dotplot_tab="dotplot/{accession}.tab", dotplot_pdf="dotplot/{accession}.pdf"
     params: sge_opts="-l mfree=4G"
     shell: "~jlhudd/src/lastz-distrib-1.02.00/src/lastz {input} --self --format=lav --rdotplot={output.dotplot_tab} > {output.lav}; Rscript ~jlhudd/fasta_tools/lastz_dotplot.R {output.dotplot_tab} {output.dotplot_pdf}"
-
-rule get_2bit_info:
-    input: "clones.2bit"
-    output: "clones.chromInfo"
-    params: sge_opts=""
-    shell: "twoBitInfo {input} {output}"
-
-rule create_fasta_for_clones:
-    input: "clones.2bit"
-    output: "clones.fasta"
-    params: sge_opts=""
-    shell: "twoBitToFa {input} {output}"
-
-rule create_2bit_for_clones:
-    input: sequences("all_masked")
-    output: "clones.2bit"
-    params: sge_opts=""
-    shell: "faToTwoBit {input}/* {output}"
-
-rule clean:
-    params: sge_opts=""
-    shell: "rm -rf clones* lav/ dotplot/ psl/ tandem_repeats*"
