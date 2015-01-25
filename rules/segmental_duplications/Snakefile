@@ -1,5 +1,5 @@
 configfile: "./config.json"
-include: "liftover/Snakefile"
+include: "rules/liftover/Snakefile"
 
 rule combine_summary_tables:
     input: expand("segmental_duplications_for_all_accessions.{type}.tab", type=("intra", "inter"))

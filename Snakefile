@@ -1,8 +1,8 @@
-include: "sequences/Snakefile"
-include: "tandem_repeats/Snakefile"
-include: "segmental_duplications/Snakefile"
-include: "genes/Snakefile"
-include: "wssd/Snakefile"
+include: "rules/sequences/Snakefile"
+include: "rules/tandem_repeats/Snakefile"
+include: "rules/segmental_duplications/Snakefile"
+include: "rules/genes/Snakefile"
+include: "rules/wssd/Snakefile"
 
 rule all:
     input: "annotations_per_accession.tab", "duplicated_genes_per_accession.tab"
