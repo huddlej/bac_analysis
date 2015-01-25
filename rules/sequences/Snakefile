@@ -48,7 +48,7 @@ rule merge_gaps:
     shell: "sort -k 1,1 -k 2,2n {input} > {output}"
 
 rule merge_sequence_indices:
-    input: expand("rawFA/{accession}.fai", accession=ACCESSIONS)
+    input: expand("fasta_index/{accession}.fai", accession=ACCESSIONS)
     output: "bac.out"
     shell: "sort -k 1,1 {input} > {output}"
 
@@ -132,12 +132,12 @@ rule find_gaps:
 
 rule index_sequences:
     input: "rawFA/{accession}"
-    output: "rawFA/{accession}.fai"
+    output: "fasta_index/{accession}.fai"
     params: sge_opts=""
-    shell: "samtools faidx {input}"
+    shell: "mkdir -p `dirname {output}`; samtools faidx {input}; mv {input}.fai {output}"
 
 rule download_sequences:
-    output: "rawFA/{accession,\d+.\d}"
+    output: "rawFA/{accession}"
     params: sge_opts=""
     shell: """wget "http://www.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nucleotide&id={wildcards.accession}&complexity=1&rettype=fasta" -O {output}; sed -i '/^>/s/^>.\+/>{wildcards.accession}/' {output}"""
 
