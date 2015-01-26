@@ -17,4 +17,9 @@ rule combine_reports:
 rule build_clone_ids_column:
     input: config["clone_ids"]
     output: "clone_ids_summary.txt"
+    params: sge_opts=""
     shell: """awk '{{ if (NR == 1) {{ print "clone_id" }} print }}' {input} > {output}"""
+
+rule clean:
+    params: sge_opts=""
+    shell: "rm -rf all_masked annotations_per_accession.tab bac* clones.* dotplot duplicated* error* fasta_index gaps* genes* gmap* liftover* mask mega64_out merged* mRNA* norptgap.tab post_mega rawFA ref* rmsk* segmental_duplications* tandem_repeats* wins wmsk* wssd*"

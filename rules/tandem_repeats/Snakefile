@@ -8,11 +8,13 @@ with open(config["clone_ids"], "r") as clone_ids_fh:
 rule tandem_repeats_for_all_accessions:
     input: config["clone_ids"], "tandem_repeats_by_accession.tab"
     output: "tandem_repeats_for_all_accessions.tab"
+    params: sge_opts=""
     shell: """join -j 1 -a 1 -e 0 -o 1.1 2.2 -t"	" {input} | cut -f 2 | awk 'OFS="\\t" {{ if (NR == 1) {{ print "tandem_repeats" }} print }}' > {output}"""
 
 rule tandem_repeats_by_accession:
     input: "tandem_repeats.bed"
     output: "tandem_repeats_by_accession.tab"
+    params: sge_opts=""
     shell: """awk 'OFS="\\t" {{ print $1,$3-$2 }}' {input} | groupBy -i stdin -g 1 -c 2 -o sum > {output}"""
 
 rule merge_tandem_repeats:
@@ -35,6 +37,7 @@ rule convert_lav_to_psl:
 
 rule self_align_masked_clone:
     input: "mask/{accession}.all_masked.fasta"
-    output: lav="tandem_repeats_lav/{accession}.lav", dotplot_tab="dotplot/{accession}.tab", dotplot_pdf="dotplot/{accession}.pdf"
+    output: lav="tandem_repeats_lav/{accession}.lav", dotplot_tab="dotplot/{accession}.tab" #, dotplot_pdf="dotplot/{accession}.pdf"
     params: sge_opts="-l mfree=4G"
-    shell: "~jlhudd/src/lastz-distrib-1.02.00/src/lastz {input} --self --format=lav --rdotplot={output.dotplot_tab} > {output.lav}; Rscript ~jlhudd/fasta_tools/lastz_dotplot.R {output.dotplot_tab} {output.dotplot_pdf}"
+    shell: "~jlhudd/src/lastz-distrib-1.02.00/src/lastz {input} --self --format=lav --rdotplot={output.dotplot_tab} > {output.lav};"
+           #"Rscript ~jlhudd/fasta_tools/lastz_dotplot.R {output.dotplot_tab} {output.dotplot_pdf}"

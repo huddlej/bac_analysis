@@ -30,26 +30,31 @@ rule create_2bit_for_clones:
 rule find_non_repeat_and_gap_positions:
     input: repeats="wmsk.merged", gaps="gaps.tab", sizes="bac.out"
     output: "norptgap.tab"
+    params: sge_opts=""
     shell: "sort -k 1,1 -k 2,2n {input.repeats} {input.gaps} | bedtools merge -i stdin -d 1 | bedtools complement -i stdin -g {input.sizes} > {output}"
 
 rule annotate_gaps_for_all_clones:
     input: config["clone_ids"], "gaps_by_accession.tab"
     output: "gaps_for_all_accessions.tab"
+    params: sge_opts=""
     shell: """join -j 1 -a 1 -e 0 -o 1.1 2.2 2.3 -t"	" {input} | cut -f 2-3 | awk 'OFS="\\t" {{ if (NR == 1) {{ print "gaps","gap_bases" }} print }}' > {output}"""
 
 rule get_gaps_in_clones:
     input: "gaps.tab"
     output: "gaps_by_accession.tab"
+    params: sge_opts=""
     shell: """sed '/_rc/d' {input} | sort -k 1,1 | awk 'OFS="\\t" {{ print $0,$3-$2 }}' | groupBy -i stdin -g 1 -c 4,4 -o count,sum > {output}"""
 
 rule merge_gaps:
     input: expand("gaps/{accession}.bed", accession=ACCESSIONS)
     output: "gaps.tab"
+    params: sge_opts=""
     shell: "sort -k 1,1 -k 2,2n {input} > {output}"
 
 rule merge_sequence_indices:
     input: expand("fasta_index/{accession}.fai", accession=ACCESSIONS)
     output: "bac.out"
+    params: sge_opts=""
     shell: "sort -k 1,1 {input} > {output}"
 
 rule mask_all_sequences:
@@ -121,7 +126,7 @@ rule convert_repeatmasker_gff_to_bed:
 rule repeatmask_sequences:
     input: "rawFA/{accession,\d+.\d}"
     output: "mask/{accession}.masked", "mask/{accession}.out.gff"
-    params: sge_opts=""
+    params: sge_opts="-l mfree=2G"
     shell: """RepeatMasker -gff -no_is -xsmall -q -e wublast -species "{SPECIES}" -dir `dirname {output[0]}` {input}; rm -f `dirname {output[0]}`/{wildcards.accession}.{{cat,out,ref,tbl}}"""
 
 rule find_gaps:
@@ -140,7 +145,3 @@ rule download_sequences:
     output: "rawFA/{accession}"
     params: sge_opts=""
     shell: """wget "http://www.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nucleotide&id={wildcards.accession}&complexity=1&rettype=fasta" -O {output}; sed -i '/^>/s/^>.\+/>{wildcards.accession}/' {output}"""
-
-rule clean:
-    params: sge_opts=""
-    shell: "rm -rf rawFA mask all_masked wmsk.merged rmsk.merged wmsk_only.merged"
