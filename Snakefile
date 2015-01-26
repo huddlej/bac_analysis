@@ -11,8 +11,8 @@ rule all:
 rule combine_reports:
     input: "clone_ids_summary.txt", "gaps_for_all_accessions.tab", "tandem_repeats_for_all_accessions.tab", "segmental_duplications_for_all_accessions.tab", "genes_for_all_accessions.tab", "wssd_for_all_accessions.tab"
     output: "annotations_per_accession.tab"
-    params: sge_opts=""
-    shell: "paste {input} > {output}"
+    params: sge_opts="", organism=config["common_species_name"]
+    shell: """paste {input} | awk 'OFS="\t" {{ if (NR == 1) {{ print "organism",$0 }} else {{ print "{params.organism}",$0 }} }}' > {output}"""
 
 rule build_clone_ids_column:
     input: config["clone_ids"]
