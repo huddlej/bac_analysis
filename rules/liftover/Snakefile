@@ -4,7 +4,6 @@ import os
 configfile: "./config.json"
 
 chromosome_fastas = glob.glob("%s/*" % config["chromosomes_dir"])
-chromosome_fastas = [chromosome_fasta for chromosome_fasta in chromosome_fastas if "chr12" in chromosome_fasta]
 #chromosome_fastas = [chromosome_fasta for chromosome_fasta in chromosome_fastas if not "chrUn" in chromosome_fasta]
 chromosomes = [os.path.basename(chromosome_fasta) for chromosome_fasta in chromosome_fastas]
 
