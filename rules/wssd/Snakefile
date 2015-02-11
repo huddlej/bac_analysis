@@ -1,5 +1,3 @@
-configfile: "./config.json"
-
 SPECIES_NAME = config["common_species_name"]
 WSSD_THRESHOLD_5KB = config["wssd_threshold_5kb"]
 WSSD_THRESHOLD_1KB = WSSD_THRESHOLD_5KB / 5

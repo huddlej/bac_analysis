@@ -1,5 +1,3 @@
-configfile: "./config.json"
-
 # Map mRNA sequences to BACs.
 
 rule duplicated_genes:

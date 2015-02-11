@@ -1,6 +1,3 @@
-
-configfile: "./config.json"
-
 SPECIES = config["full_species_name"]
 
 with open(config["clone_ids"], "r") as clone_ids_fh:
