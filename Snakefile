@@ -8,7 +8,7 @@ include: "rules/wssd/Snakefile"
 include: "rules/tracks/Snakefile"
 
 rule all:
-    input: "annotations_per_accession.tab", "duplicated_genes_per_accession.tab"
+    input: "annotations_per_accession.tab", "duplicated_genes_per_accession.tab", "tracks/genomes.txt"
     params: sge_opts=""
 
 rule combine_reports:
