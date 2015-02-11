@@ -19,13 +19,13 @@ rule merge_tandem_repeats:
     input: expand("tandem_repeats/{accession}.bed", accession=ACCESSIONS)
     output: "tandem_repeats.bed"
     params: sge_opts=""
-    shell: "sort -k 1,1 -k 2,2n {input} > {output}"
+    shell: "sort -k 1,1 -k 2,2n -m {input} > {output}"
 
 rule convert_psl_to_tandem_repeats_bed:
     input: "tandem_repeats_psl/{accession}.psl"
     output: "tandem_repeats/{accession}.bed"
     params: sge_opts=""
-    shell: "pslToBed {input} {output}"
+    shell: "pslToBed {input} /dev/stdout | sort -k 1,1 -k 2,2n | bedtools merge -i stdin -d 1 > {output}"
 
 rule convert_lav_to_psl:
     input: "tandem_repeats_lav/{accession}.lav"
