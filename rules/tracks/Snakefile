@@ -49,10 +49,10 @@ rule tandem_repeats_bigbed:
 rule wssd_read_depth_trackdef:
     input: "tracks/wssd_depth.bw"
     output: "tracks/wssd_depth.trackDb.txt"
-    params: sge_opts="", threshold=str(config["wssd_threshold_5kb"]), max_view_limit=str(int(config["wssd_threshold_5kb"] * 2))
+    params: sge_opts="", threshold=str(config["wssd_threshold_5kb"] / 5), max_view_limit=str(int((config["wssd_threshold_5kb"] / 5) * 2))
     shell: """echo "track wssd_depth
-shortLabel Read depth
-longLabel WSSD read depth
+shortLabel Read depth (1 Kb windows)
+longLabel WSSD read depth (1 Kb windows)
 type bigWig
 bigDataUrl {input}
 group duplications

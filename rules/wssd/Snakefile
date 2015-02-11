@@ -71,7 +71,7 @@ rule create_nonsliding_windows:
     input: "bac.out"
     output: "wins/wssd_depth_windows.bed"
     params: sge_opts=""
-    shell: "bedtools makewindows -g {input} -w 5000 > {output}"
+    shell: "bedtools makewindows -g {input} -w 1000 > {output}"
 
 rule calculate_depth_stats:
     input: "wins/5-1_norpt_iden.tab"
