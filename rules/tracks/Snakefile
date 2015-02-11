@@ -1,4 +1,4 @@
-TRACKS = ("gaps", "repeats", "segmental_duplications", "genes", "wssd", "tandem_repeats")
+TRACKS = ("gaps", "repeats", "segmental_duplications", "genes", "wssd", "tandem_repeats", "wssd_depth")
 
 rule trackdefs:
     input: expand("{track}.trackDb.txt", track=TRACKS)
@@ -23,6 +23,30 @@ rule tandem_repeats_bigbed:
     output: "tandem_repeats.bb"
     params: sge_opts=""
     shell: "bedToBigBed {input} {output}"
+
+rule wssd_read_depth_trackdef:
+    input: "wssd_depth.bw"
+    output: "wssd_depth.trackDb.txt"
+    params: sge_opts="", threshold=str(config["wssd_threshold_5kb"]), max_view_limit=str(int(config["wssd_threshold_5kb"] * 2))
+    shell: """echo "track wssd_depth
+shortLabel Read depth
+longLabel WSSD read depth
+type bigWig
+bigDataUrl {input}
+group duplications
+autoScale off
+maxHeightPixels 100:50:25
+viewLimits 0:{params.max_view_limit}
+yLineOnOff on
+yLineMark {params.threshold}
+" > {output}
+"""
+
+rule wssd_read_depth:
+    input: "wins/wssd_depth_in_windows.bedGraph", "bac.out"
+    output: "wssd_depth.bw"
+    params: sge_opts=""
+    shell: "bedGraphToBigWig {input} {output}"
 
 rule wssd_duplications_trackdef:
     input: "wssd.bb"
