@@ -1,13 +1,14 @@
 TRACKS = ("gaps", "repeats", "segmental_duplications", "genes", "wssd", "tandem_repeats", "wssd_depth")
 
 rule trackdefs:
-    input: expand("{track}.trackDb.txt", track=TRACKS)
-    output: "trackDb.txt"
-    shell: "cat {input} > {output}"
+    input: expand("tracks/{track}.trackDb.txt", track=TRACKS)
+    output: "tracks/trackDb.txt"
+    params: sge_opts=""
+    shell: "sed 's/tracks\///' {input} > {output}"
 
 rule tandem_repeats_trackdef:
-    input: "tandem_repeats.bb"
-    output: "tandem_repeats.trackDb.txt"
+    input: "tracks/tandem_repeats.bb"
+    output: "tracks/tandem_repeats.trackDb.txt"
     params: sge_opts=""
     shell: """echo "track tandem_repeats
 shortLabel Tandem repeats
@@ -20,13 +21,13 @@ group duplications
 
 rule tandem_repeats_bigbed:
     input: "tandem_repeats.bed", "bac.out"
-    output: "tandem_repeats.bb"
+    output: "tracks/tandem_repeats.bb"
     params: sge_opts=""
     shell: "bedToBigBed {input} {output}"
 
 rule wssd_read_depth_trackdef:
-    input: "wssd_depth.bw"
-    output: "wssd_depth.trackDb.txt"
+    input: "tracks/wssd_depth.bw"
+    output: "tracks/wssd_depth.trackDb.txt"
     params: sge_opts="", threshold=str(config["wssd_threshold_5kb"]), max_view_limit=str(int(config["wssd_threshold_5kb"] * 2))
     shell: """echo "track wssd_depth
 shortLabel Read depth
@@ -44,13 +45,13 @@ yLineMark {params.threshold}
 
 rule wssd_read_depth:
     input: "wins/wssd_depth_in_windows.bedGraph", "bac.out"
-    output: "wssd_depth.bw"
+    output: "tracks/wssd_depth.bw"
     params: sge_opts=""
     shell: "bedGraphToBigWig {input} {output}"
 
 rule wssd_duplications_trackdef:
-    input: "wssd.bb"
-    output: "wssd.trackDb.txt"
+    input: "tracks/wssd.bb"
+    output: "tracks/wssd.trackDb.txt"
     params: sge_opts=""
     shell: """echo "track wssd
 shortLabel WSSD
@@ -63,13 +64,13 @@ group duplications
 
 rule wssd_duplications:
     input: "wins/wssdGE10K_nogap.tab", "bac.out"
-    output: "wssd.bb"
+    output: "tracks/wssd.bb"
     params: sge_opts=""
     shell: "bedToBigBed {input} {output}"
 
 rule segmental_duplications_trackdef:
-    input: "segmental_duplications.bb"
-    output: "segmental_duplications.trackDb.txt"
+    input: "tracks/segmental_duplications.bb"
+    output: "tracks/segmental_duplications.trackDb.txt"
     params: sge_opts=""
     shell: """echo "track wgac
 shortLabel Segmental duplications
@@ -83,13 +84,13 @@ group duplications
 
 rule segmental_duplications:
     input: "segmental_duplications_in_bacs.bed", "bac.out"
-    output: "segmental_duplications.bb"
+    output: "tracks/segmental_duplications.bb"
     params: sge_opts=""
     shell: "bedToBigBed {input} {output}"
 
 rule genes_trackdef:
-    input: "genes.bb"
-    output: "genes.trackDb.txt"
+    input: "tracks/genes.bb"
+    output: "tracks/genes.trackDb.txt"
     params: sge_opts=""
     shell: """echo "track genes
 shortLabel Genes
@@ -102,13 +103,13 @@ group genes
 
 rule genes:
     input: "mRNA.named.bed", "bac.out"
-    output: "genes.bb"
+    output: "tracks/genes.bb"
     params: sge_opts=""
     shell: "bedToBigBed {input} {output}"
 
 rule repeats_trackdef:
-    input: "repeats.bb"
-    output: "repeats.trackDb.txt"
+    input: "tracks/repeats.bb"
+    output: "tracks/repeats.trackDb.txt"
     params: sge_opts=""
     shell: """echo "track repeats
 shortLabel Repeats
@@ -124,13 +125,13 @@ group varRep
 
 rule repeats_bigbed:
     input: "rmsk.combined.bed", "bac.out"
-    output: "repeats.bb"
+    output: "tracks/repeats.bb"
     params: sge_opts=""
     shell: "bedToBigBed {input} {output}"
 
 rule gaps_trackdef:
-    input: "gaps.bb"
-    output: "gaps.trackDb.txt"
+    input: "tracks/gaps.bb"
+    output: "tracks/gaps.trackDb.txt"
     params: sge_opts=""
     shell: """echo "track gaps
 shortLabel Gaps
@@ -143,6 +144,6 @@ group map
 
 rule gaps_bigbed:
     input: "gaps.tab", "bac.out"
-    output: "gaps.bb"
+    output: "tracks/gaps.bb"
     params: sge_opts=""
     shell: "bedToBigBed {input} {output}"
