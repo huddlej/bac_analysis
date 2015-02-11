@@ -17,7 +17,7 @@ scientificName {params.full_species_name}
 """
 
 rule groups:
-    output: "groups.txt"
+    output: "tracks/groups.txt"
     params: sge_opts=""
     shell: """echo "name map
 label Mapping and Sequencing
