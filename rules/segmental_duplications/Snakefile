@@ -5,7 +5,7 @@ rule combine_summary_tables:
     input: expand("segmental_duplications_for_all_accessions.{type}.tab", type=("intra", "inter"))
     output: "segmental_duplications_for_all_accessions.tab"
     params: sge_opts=""
-    shell: """paste {input} | awk 'OFS="\\t" {{ if (NR == 1) {{ print $0,"wgac_all" }} else {{ print $0,$2+$3 }} }}' > {output}"""
+    shell: """paste {input} | awk 'OFS="\\t" {{ if (NR == 1) {{ print $0,"wgac_all" }} else {{ print $0,$1 + $2 }} }}' > {output}"""
 
 rule annotate_segmental_duplications_for_all_clones:
     input: config["clone_ids"], "segmental_duplications_per_clone.{type}.tab"
