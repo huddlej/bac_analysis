@@ -1,7 +1,7 @@
 TRACKS = ("gaps", "repeats", "segmental_duplications", "genes", "wssd", "tandem_repeats", "wssd_depth")
 
 rule genomes:
-    input: trackdb="tracks/trackDb.txt", sequence="tracks/clones.2bit", contigs="bac.out", groups="groups.txt"
+    input: trackdb="tracks/trackDb.txt", sequence="tracks/clones.2bit", contigs="bac.out", groups="tracks/groups.txt"
     output: "tracks/genomes.txt"
     params: sge_opts="", common_species_name=config["common_species_name"], full_species_name=config["full_species_name"]
     shell: """echo "genome {params.common_species_name}
