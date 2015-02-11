@@ -1,4 +1,3 @@
-configfile: "./config.json"
 include: "rules/liftover/Snakefile"
 
 rule combine_summary_tables:
