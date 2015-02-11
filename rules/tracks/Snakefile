@@ -34,7 +34,7 @@ rule tandem_repeats_trackdef:
     shell: """echo "track tandem_repeats
 shortLabel Tandem repeats
 longLabel Tandem repeats
-type bigBed 12
+type bigBed 3
 bigDataUrl {input}
 group duplications
 " > {output}
