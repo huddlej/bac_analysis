@@ -21,9 +21,9 @@ rule segmental_duplications_per_clone_by_type:
 # Lift over WGAC from reference to BACs.
 rule liftover_segmental_duplications:
     input: "segmental_duplications.bed", "liftover.chain"
-    output: lifted="segmental_duplications_in_bacs.bed", unmapped="segmental_duplications_unmapped_to_bacs.txt"
+    output: "segmental_duplications_in_bacs.bed", "segmental_duplications_unmapped_to_bacs.txt"
     params: sge_opts=""
-    shell: "liftOver -minMatch=0.75 {input} {output}; sort -k 1,1 -k 2,2n -o {output.lifted} {output.lifted}"
+    shell: "liftOver -minMatch=0.75 {input} {output}; sort -k 1,1 -k 2,2n -o {output[0]} {output[0]}"
 
 rule summarize_segmental_duplications:
     input: config["segmental_duplications"]
