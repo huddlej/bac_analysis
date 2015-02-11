@@ -62,7 +62,7 @@ shortLabel Tandem repeats
 longLabel Tandem repeats
 type bigBed 3
 bigDataUrl {input}
-group duplications
+group varRep
 " > {output}
 """
 
