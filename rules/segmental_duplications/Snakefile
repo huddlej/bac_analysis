@@ -29,4 +29,4 @@ rule summarize_segmental_duplications:
     input: config["segmental_duplications"]
     output: "segmental_duplications.bed"
     params: sge_opts=""
-    shell: """awk 'OFS="\\t" {{ if($1 == $7) {{ type="intra" }} else {{ type="inter" }} if ($6 == "_") {{ strand="-" }} else {{ strand="+" }}; if ($26 > 0.99) {{ color="255,140,0" }} else if ($26 > 0.98 && $26 <= 0.99) {{ color="255,255,0" }} else {{ color="105,105,105" }} score=sprintf("%i", $26 * 1000); print $1,$2,$3,$4"_"type,score,strand,$2,$3,color }}' {input} | sort -k 1,1 -k 2,2n > {output}"""
+    shell: """awk 'OFS="\\t" {{ if($1 == $7) {{ type="intra" }} else {{ type="inter" }} if ($6 == "_") {{ strand="-" }} else {{ strand="+" }}; if ($26 > 0.99) {{ color="255,140,0" }} else if ($26 > 0.98 && $26 <= 0.99) {{ color="255,255,0" }} else {{ color="105,105,105" }} score=sprintf("%i", $26 * 1000); print $1,$2,$3,$7":"$8"-"$9"_"type,score,strand,$2,$3,color }}' {input} | sort -k 1,1 -k 2,2n > {output}"""
