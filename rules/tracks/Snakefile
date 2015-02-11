@@ -1,5 +1,26 @@
 TRACKS = ("gaps", "repeats", "segmental_duplications", "genes", "wssd", "tandem_repeats", "wssd_depth")
 
+rule genomes:
+    input: trackdb="tracks/trackDb.txt", sequence="tracks/clones.2bit", contigs="bac.out"
+    output: "tracks/genomes.txt"
+    params: sge_opts="", common_species_name=config["common_species_name"], full_species_name=config["full_species_name"]
+    shell: """echo "genome {params.common_species_name}
+trackDb {input.trackdb}
+twoBitPath {input.sequence}
+description BACs for {params.common_species_name}
+organism {params.common_species_name}
+defaultPos `head -n 1 {input.contigs} | awk 'OFS="\\t" {{ print $1":1-"$2 }}'`
+orderKey 4800
+scientificName {params.full_species_name}
+" | sed 's/tracks\///' > {output}
+"""
+
+rule copy_twobit:
+    input: "clones.2bit"
+    output: "tracks/clones.2bit"
+    params: sge_opts=""
+    shell: "rsync {input} {output}"
+
 rule trackdefs:
     input: expand("tracks/{track}.trackDb.txt", track=TRACKS)
     output: "tracks/trackDb.txt"
