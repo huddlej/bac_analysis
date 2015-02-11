@@ -1,3 +1,5 @@
+configfile: "config.json"
+
 include: "rules/sequences/Snakefile"
 include: "rules/tandem_repeats/Snakefile"
 include: "rules/segmental_duplications/Snakefile"
