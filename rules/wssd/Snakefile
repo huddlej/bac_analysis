@@ -61,6 +61,18 @@ rule pick_wssd_windows:
     params: sge_opts=""
     shell: "wssd_picker.pl -f {input.threshold_5kb} -w 7 -s 6 -c {WSSD_THRESHOLD_5KB} -b 3 -k {input.threshold_1kb} -n 5 -i 1 -t {WSSD_THRESHOLD_1KB} -o {output}"
 
+rule calculate_depth_in_nonsliding_windows:
+    input: windows="wins/wssd_depth_windows.bed", reads="wins/rd.out"
+    output: "wins/wssd_depth_in_windows.bedGraph"
+    params: sge_opts=""
+    shell: "bedtools intersect -a {input.windows} -b {input.reads} -c > {output}"
+
+rule create_nonsliding_windows:
+    input: "bac.out"
+    output: "wins/wssd_depth_windows.bed"
+    params: sge_opts=""
+    shell: "bedtools makewindows -g {input} -w 5000 > {output}"
+
 rule calculate_depth_stats:
     input: "wins/5-1_norpt_iden.tab"
     output: "wins/depth_stats.txt"
