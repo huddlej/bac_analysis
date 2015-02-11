@@ -69,4 +69,4 @@ rule extract_mRNA:
 rule get_mRNA:
     output: "refMrna.fa.gz"
     params: sge_opts=""
-    shell: "wget ftp://hgdownload.cse.ucsc.edu/goldenPath/%s/bigZips/{output}" % config["species_reference_name"]
+    shell: "wget %s -O {output}" % config["mrna_url"]
