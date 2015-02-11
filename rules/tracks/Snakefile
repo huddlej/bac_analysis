@@ -1,20 +1,5 @@
 TRACKS = ("gaps", "repeats", "segmental_duplications", "genes", "wssd", "tandem_repeats")
 
-subworkflow sequences:
-    workdir: "../sequences"
-
-subworkflow segmental_duplications:
-    workdir: "../segmental_duplications"
-
-subworkflow genes:
-    workdir: "../genes"
-
-subworkflow wssd:
-    workdir: "../wssd"
-
-subworkflow tandem_repeats:
-    workdir: "../tandem_repeats"
-
 rule trackdefs:
     input: expand("{track}.trackDb.txt", track=TRACKS)
     output: "trackDb.txt"
@@ -34,7 +19,7 @@ group duplications
 """
 
 rule tandem_repeats_bigbed:
-    input: tandem_repeats("tandem_repeats.bed"), sequences("bac.out")
+    input: "tandem_repeats.bed", "bac.out"
     output: "tandem_repeats.bb"
     params: sge_opts=""
     shell: "bedToBigBed {input} {output}"
@@ -53,7 +38,7 @@ group duplications
 """
 
 rule wssd_duplications:
-    input: wssd("wins/wssdGE10K_nogap.tab"), sequences("bac.out")
+    input: "wins/wssdGE10K_nogap.tab", "bac.out"
     output: "wssd.bb"
     params: sge_opts=""
     shell: "bedToBigBed {input} {output}"
@@ -73,7 +58,7 @@ group duplications
 """
 
 rule segmental_duplications:
-    input: segmental_duplications("segmental_duplications_in_bacs.bed"), sequences("bac.out")
+    input: "segmental_duplications_in_bacs.bed", "bac.out"
     output: "segmental_duplications.bb"
     params: sge_opts=""
     shell: "bedToBigBed {input} {output}"
@@ -92,7 +77,7 @@ group genes
 """
 
 rule genes:
-    input: genes("mRNA.named.bed"), sequences("bac.out")
+    input: "mRNA.named.bed", "bac.out"
     output: "genes.bb"
     params: sge_opts=""
     shell: "bedToBigBed {input} {output}"
@@ -114,7 +99,7 @@ group varRep
 """
 
 rule repeats_bigbed:
-    input: sequences("rmsk.combined.bed"), sequences("bac.out")
+    input: "rmsk.combined.bed", "bac.out"
     output: "repeats.bb"
     params: sge_opts=""
     shell: "bedToBigBed {input} {output}"
@@ -133,7 +118,7 @@ group map
 """
 
 rule gaps_bigbed:
-    input: sequences("gaps.tab"), sequences("bac.out")
+    input: "gaps.tab", "bac.out"
     output: "gaps.bb"
     params: sge_opts=""
     shell: "bedToBigBed {input} {output}"
