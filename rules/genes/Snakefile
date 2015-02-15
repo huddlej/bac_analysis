@@ -39,7 +39,7 @@ rule get_refseq_name_by_accession:
 rule get_refseq_lookup_table:
     output: "refLink.txt.gz"
     params: sge_opts=""
-    shell: "wget ftp://hgdownload.cse.ucsc.edu/goldenPath/%s/database/{output}" % config["species_reference_name"]
+    shell: "wget %s -O {output}" % config["mrna_link_url"]
 
 rule convert_BAM_to_BED:
     input: "mRNA.sorted.bam"
