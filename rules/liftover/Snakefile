@@ -70,7 +70,7 @@ rule merge_psl:
     input: expand("liftover_psl/{chromosome}.psl", chromosome=chromosomes)
     output: "merged_alignments.psl"
     params: sge_opts=""
-    shell: "sed '/^#/d' {input} | sort -k 10 > {output}"
+    shell: "for psl in liftover_psl/*; do sed '/^#/d' $psl ;done | sort -k 10 > {output}"
 
 rule convert_liftover_lav_to_psl:
     input: "liftover_lav/{chromosome}.lav"
