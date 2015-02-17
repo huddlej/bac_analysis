@@ -95,7 +95,11 @@ rule calculate_read_depth:
     input: "post_mega", "norptgap.tab"
     output: "wins/rd.out"
     params: sge_opts=""
-    shell: "mkdir -p $(dirname {output}); mega_wincln_qual_parser.pl -d {input[0]} -s .bo.bo -c -i 94 -e -a 300 -r {input[1]} -m 200 -h 200 -p 0.4 -o {output} -q -t > /dev/null;"
+    run:
+        if config.get("wssd_database_type") == "protein":
+            shell("mkdir -p $(dirname {output}); mega_wincln_qual_parser.pl -b %s -d {input[0]} -s .bo.bo -c -i 94 -e -a 300 -r {input[1]} -m 200 -h 200 -p 0.4 -o {output} -q -t > /dev/null;" % config.get("wssd_database"))
+        else:
+            shell("mkdir -p $(dirname {output}); mega_wincln_qual_parser.pl -d {input[0]} -s .bo.bo -c -i 94 -e -a 300 -r {input[1]} -m 200 -h 200 -p 0.4 -o {output} -q -t > /dev/null;")
 
 rule post_blast:
     input: "mega64_out"
