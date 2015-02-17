@@ -1,0 +1,8 @@
+*.tab
+*.bed
+*.gz
+*.fasta
+*.bam
+*.2bit
+*.txt
+.snakemake*
