@@ -3,8 +3,8 @@
 rule duplicated_genes:
     input: genes="mRNA.named.bed", wssd="wins/wssdGE10K_nogap.tab"
     output: "duplicated_genes_per_accession.tab"
-    params: sge_opts=""
-    shell: "bedtools intersect -a {input.genes} -b {input.wssd} -wa | cut -f 1,4 | sort -k 1,1 -k 2,2 | uniq > {output}"
+    params: sge_opts="", organism=config["common_species_name"]
+    shell: """bedtools intersect -a {input.genes} -b {input.wssd} -wa | cut -f 1,4 | sort -k 1,1 -k 2,2 | uniq | awk 'OFS="\\t" {{ print "{params.organism}",$0 }}' > {output}"""
 
 rule genes_for_all_accessions:
     input: config["clone_ids"], "genes_by_accession.tab"
