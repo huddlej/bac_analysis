@@ -63,6 +63,7 @@ longLabel Tandem repeats
 type bigBed 3
 bigDataUrl {input}
 group varRep
+visibility dense
 " > {output}
 """
 
@@ -87,6 +88,7 @@ maxHeightPixels 100:50:25
 viewLimits 0:{params.max_view_limit}
 yLineOnOff on
 yLineMark {params.threshold}
+visibility full
 " > {output}
 """
 
@@ -106,6 +108,7 @@ longLabel WSSD
 type bigBed 3
 bigDataUrl {input}
 group duplications
+visibility dense
 " > {output}
 """
 
@@ -126,6 +129,7 @@ type bigBed 9
 bigDataUrl {input}
 itemRgb on
 group duplications
+visibility squish
 " > {output}
 """
 
@@ -145,6 +149,7 @@ longLabel Genes
 type bigBed 12
 bigDataUrl {input}
 group genes
+visibility pack
 " > {output}
 """
 
@@ -167,6 +172,7 @@ spectrum on
 scoreMax 1000
 scoreMin 0
 group varRep
+visibility dense
 " > {output}
 """
 
@@ -186,6 +192,7 @@ longLabel Gaps
 type bigBed 3
 bigDataUrl {input}
 group map
+visibility dense
 " > {output}
 """
 
