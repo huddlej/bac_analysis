@@ -1,7 +1,12 @@
 SPECIES = config["full_species_name"]
 
-with open(config["clone_ids"], "r") as clone_ids_fh:
-    ACCESSIONS = [line.rstrip() for line in clone_ids_fh]
+if "clone_paths" in config:
+    with open(config["clone_paths"], "r") as clone_ids_fh:
+        CLONE_PATHS_BY_ID = dict([line.rstrip().split("\t") for line in clone_ids_fh])
+        ACCESSIONS = CLONE_PATHS_BY_ID.keys()
+else:
+    with open(config["clone_ids"], "r") as clone_ids_fh:
+        ACCESSIONS = [line.rstrip() for line in clone_ids_fh]
 
 TRF_PARAMS = config["trf_params"]
 TRF_PARAMS_OUTPUT = ".".join(TRF_PARAMS.split(" "))
@@ -141,4 +146,11 @@ rule index_sequences:
 rule download_sequences:
     output: "rawFA/{accession}"
     params: sge_opts=""
-    shell: """wget "http://www.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nucleotide&id={wildcards.accession}&complexity=1&rettype=fasta" -O {output}; sed -i '/^>/s/^>.\+/>{wildcards.accession}/' {output}"""
+    run:
+        if "clone_paths" in config:
+            # Local paths to clone ids are provide in a tab-delimited file.
+            clone_path = CLONE_PATHS_BY_ID[wildcards.accession]
+            shell("rsync {clone_path} rawFA/{wildcards.accession}")
+        else:
+            # Clone ids are provided as accessions that can be downloaded from GenBank.
+            shell("""wget "http://www.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nucleotide&id={wildcards.accession}&complexity=1&rettype=fasta" -O {output}; sed -i '/^>/s/^>.\+/>{wildcards.accession}/' {output}""")
