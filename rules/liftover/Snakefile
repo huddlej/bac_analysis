@@ -63,7 +63,7 @@ rule sort_chains:
 rule chain_alignments:
     input: "merged_alignments.psl", config["reference_2bit"], "clones.2bit"
     output: "merged_alignments.chain"
-    params: sge_opts=""
+    params: sge_opts="-l mfree=4G"
     shell: "axtChain -linearGap=medium -psl {input} {output}"
 
 rule merge_psl:

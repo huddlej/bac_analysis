@@ -1,4 +1,4 @@
-include: "rules/liftover/Snakefile"
+include: "../liftover/Snakefile"
 
 rule combine_summary_tables:
     input: expand("segmental_duplications_for_all_accessions.{type}.tab", type=("intra", "inter"))
