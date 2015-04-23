@@ -6,6 +6,8 @@ include: "rules/segmental_duplications/Snakefile"
 include: "rules/genes/Snakefile"
 include: "rules/wssd/Snakefile"
 include: "rules/tracks/Snakefile"
+include: "rules/genes_by_lastz/Snakefile"
+include: "rules/shared_sequence/Snakefile"
 
 rule all:
     input: "annotations_per_accession.tab", "duplicated_genes_per_accession.tab", "tracks/genomes.txt"
