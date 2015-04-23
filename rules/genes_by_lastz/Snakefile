@@ -54,7 +54,7 @@ rule place_genes_in_clone:
     input: target="all_masked/{clone}", query=config["mrna_fasta"]
     output: lav="gene_liftover_lav/{clone}.lav"
     params: sge_opts="-l mfree=4G"
-    shell: "~jlhudd/src/lastz-distrib-1.02.00/src/lastz {input.target} {input.query} --gfextend --chain --gapped --notransition --format=lav > {output.lav}"
+    shell: "lastz {input.target} {input.query} --gfextend --chain --gapped --notransition --format=lav > {output.lav}"
 
 rule create_mrna_info:
     input: config["mrna_fasta"]
