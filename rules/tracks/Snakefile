@@ -174,7 +174,7 @@ visibility pack
 """
 
 rule genes:
-    input: "mRNA.named.bed", "bac.out"
+    input: "gene_liftover.bed", "bac.out"
     output: "tracks/genes.bb"
     params: sge_opts=""
     shell: "bedToBigBed {input} {output}"
