@@ -1,0 +1,27 @@
+
+with open(config["clone_ids"], "r") as clone_ids_fh:
+    ACCESSIONS = [line.rstrip() for line in clone_ids_fh]
+
+rule merge_shared_sequence_bed:
+    input: expand("shared_sequence_bed/{clone}.bed", clone=ACCESSIONS)
+    output: "shared_sequence_between_clones.bed"
+    params: sge_opts="", minimum_size="500"
+    shell: "sort -k 1,1 -k 2,2n {input} | awk '$3 - $2 > {params.minimum_size}' > {output}"
+
+rule convert_shared_sequence_psl_to_bed:
+    input: "shared_sequence_psl/{clone}.psl"
+    output: "shared_sequence_bed/{clone}.bed"
+    params: sge_opts=""
+    shell: "pslToBed {input} {output}"
+
+rule convert_shared_sequence_lav_to_psl:
+    input: "shared_sequence_lav/{clone}.lav"
+    output: "shared_sequence_psl/{clone}.psl"
+    params: sge_opts=""
+    shell: "lavToPsl {input} {output}"
+
+rule compare_clones:
+    input: target="all_masked/{clone}", query="clones.fasta"
+    output: lav="shared_sequence_lav/{clone}.lav"
+    params: sge_opts="-l mfree=4G"
+    shell: "lastz {input.target} {input.query} --gfextend --chain --gapped --notransition --format=lav --notrivial > {output.lav}"

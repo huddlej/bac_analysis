@@ -1,4 +1,4 @@
-TRACKS = ("gaps", "repeats", "segmental_duplications", "genes", "wssd", "tandem_repeats", "wssd_depth")
+TRACKS = ("gaps", "repeats", "segmental_duplications", "genes", "wssd", "tandem_repeats", "wssd_depth", "shared_sequence_between_clones")
 
 rule genomes:
     input: trackdb="tracks/trackDb.txt", sequence="tracks/clones.2bit", contigs="bac.out", groups="tracks/groups.txt"
@@ -52,6 +52,26 @@ rule trackdefs:
     output: "tracks/trackDb.txt"
     params: sge_opts=""
     shell: "sed 's/tracks\///' {input} > {output}"
+
+rule shared_sequence_between_clones_trackdef:
+    input: "tracks/shared_sequence_between_clones.bb"
+    output: "tracks/shared_sequence_between_clones.trackDb.txt"
+    params: sge_opts=""
+    shell: """echo "track shared_sequence_between_clones
+shortLabel Shared sequence
+longLabel Shared sequence between clones
+type bigBed 12
+bigDataUrl {input}
+group varRep
+visibility pack
+" > {output}
+"""
+
+rule shared_sequence_between_clones_bigbed:
+    input: "shared_sequence_between_clones.bed", "bac.out"
+    output: "tracks/shared_sequence_between_clones.bb"
+    params: sge_opts=""
+    shell: "bedToBigBed {input} {output}"
 
 rule tandem_repeats_trackdef:
     input: "tracks/tandem_repeats.bb"
