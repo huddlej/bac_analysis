@@ -1,0 +1,69 @@
+# Map mRNA sequences to BACs.
+with open(config["clone_ids"], "r") as clone_ids_fh:
+    ACCESSIONS = [line.rstrip() for line in clone_ids_fh]
+
+rule convert_gene_liftover_psl_to_bed:
+    input: "gene_liftover.psl"
+    output: "gene_liftover.bed"
+    params: sge_opts=""
+    shell: "pslToBed {input} {output}; sort -k 1,1 -k 2,2n -o {output} {output}"
+
+rule convert_gene_liftover_chain_to_psl:
+    input: "genes/merged_alignments.sorted.antirepeat.filtered.chain", "clones.chromInfo", "mRNA.chromInfo", "clones.2bit", "mRNA.2bit"
+    output: "gene_liftover.psl"
+    params: sge_opts=""
+    shell: "chainToPsl {input} {output}"
+
+rule gene_filter_chains:
+    input: "genes/merged_alignments.sorted.antirepeat.chain", "clones.chromInfo", "mRNA.chromInfo"
+    output: "genes/merged_alignments.sorted.antirepeat.filtered.chain"
+    params: sge_opts=""
+    shell: "chainPreNet {input} {output}"
+
+rule gene_anti_repeat_chains:
+    input: "clones.2bit", "mRNA.2bit", "genes/merged_alignments.sorted.chain"
+    output: "genes/merged_alignments.sorted.antirepeat.chain"
+    params: sge_opts=""
+    shell: "chainAntiRepeat {input} {output}"
+
+rule gene_sort_chains:
+    input: "genes/merged_alignments.chain"
+    output: "genes/merged_alignments.sorted.chain"
+    params: sge_opts=""
+    shell: "chainSort {input} {output}"
+
+rule gene_chain_alignments:
+    input: "genes/merged_alignments.psl", "clones.2bit", "mRNA.2bit"
+    output: "genes/merged_alignments.chain"
+    params: sge_opts=""
+    shell: "axtChain -linearGap=medium -psl {input} {output}"
+
+rule gene_merge_psl:
+    input: expand("gene_liftover_psl/{clone}.psl", clone=ACCESSIONS)
+    output: "genes/merged_alignments.psl"
+    params: sge_opts=""
+    shell: "for psl in gene_liftover_psl/*; do sed '/^#/d' $psl ;done | sort -k 10 > {output}"
+
+rule convert_gene_liftover_lav_to_psl:
+    input: "gene_liftover_lav/{clone}.lav"
+    output: "gene_liftover_psl/{clone}.psl"
+    params: sge_opts=""
+    shell: "lavToPsl {input} {output}"
+
+rule place_genes_in_clone:
+    input: target="all_masked/{clone}", query=config["mrna_fasta"]
+    output: lav="gene_liftover_lav/{clone}.lav"
+    params: sge_opts="-l mfree=4G"
+    shell: "~jlhudd/src/lastz-distrib-1.02.00/src/lastz {input.target} {input.query} --gfextend --chain --gapped --notransition --format=lav > {output.lav}"
+
+rule create_mrna_info:
+    input: config["mrna_fasta"]
+    output: "mRNA.chromInfo"
+    params: sge_opts=""
+    shell: "samtools faidx {input}; mv {input}.fai {output}"
+
+rule create_mrna_two_bit:
+    input: config["mrna_fasta"]
+    output: "mRNA.2bit"
+    params: sge_opts=""
+    shell: "faToTwoBit {input} {output}"

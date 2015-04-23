@@ -82,4 +82,4 @@ rule place_masked_clone:
     input: target="%s/{chromosome}" % config["chromosomes_dir"], query="clones.fasta"
     output: lav="liftover_lav/{chromosome}.lav"
     params: sge_opts="-l mfree=4G"
-    shell: "~jlhudd/src/lastz-distrib-1.02.00/src/lastz {input.target} {input.query} --gfextend --chain --gapped --notransition --format=lav > {output.lav}"
+    shell: "lastz {input.target} {input.query} --gfextend --chain --gapped --notransition --format=lav > {output.lav}"
