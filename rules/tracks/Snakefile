@@ -64,6 +64,9 @@ type bigBed 12
 bigDataUrl {input}
 group varRep
 visibility pack
+spectrum on
+scoreMin 700
+scoreMax 950
 " > {output}
 """
 
