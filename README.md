@@ -48,3 +48,18 @@ Alternately, the pipeline can be run on a grid engine cluster (e.g., UGE) with a
 ```bash
 snakemake --cluster "qsub {params.sge_opts}" -j 10 -w 30
 ```
+
+### Running specific sub-pipelines
+
+The complete BAC analysis pipeline consists of several sub-pipelines that can be
+usefully executed on their own. To run a specific sub-pipeline without running
+the complete analysis suite, identify the final output file you want to create
+from the rules in `rules/` and provide that output file as the request to
+snakemake.
+
+For example, to only run the liftover pipeline (map clones to a specific
+reference), one would run the following command.
+
+```bash
+snakemake --cluster "qsub {params.sge_opts}" -j 10 -w 30 liftover.bed
+```
