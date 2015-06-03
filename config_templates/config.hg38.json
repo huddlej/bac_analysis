@@ -1,0 +1,18 @@
+{
+    "clone_ids": "/path/to/clone_ids.txt",
+    "clone_paths": "/path/to/clone_paths.tab",
+    "common_species_name": "human",
+    "full_species_name": "Homo sapiens",
+    "species_reference_name": "hg38",
+    "trf_params": "2 7 7 80 10 50 35",
+    "reference_fasta": "/net/eichler/vol2/eee_shared/assemblies/hg38/ucsc.hg38.no_alts.fasta",
+    "reference_2bit": "/net/eichler/vol2/eee_shared/assemblies/hg38/ucsc.hg38.no_alts.2bit",
+    "chromosome_info": "/net/eichler/vol2/eee_shared/assemblies/hg38/chromInfo.no_alts.txt",
+    "chromosomes_dir": "/net/eichler/vol2/eee_shared/assemblies/hg38/chromosomes",
+    "segmental_duplications": "/net/eichler/vol2/eee_shared/assemblies/hg38/wgac/genomicSuperDup.tab",
+    "wssd_threshold_5kb": 81.73701448,
+    "wssd_database_type": "nucleotide",
+    "wssd_database": "/net/eichler/vol2/blastdb/HS_CRA_WGS_0606/HS_CRA_WGS_0606",
+    "mrna_url": "ftp://hgdownload.cse.ucsc.edu/goldenPath/hg38/database/all_mrna.txt.gz",
+    "mrna_link_url": "ftp://hgdownload.cse.ucsc.edu/goldenPath/hg38/database/refLink.txt.gz"
+}
