@@ -5,7 +5,7 @@
 Check out the code into your working directory.
 
 ```bash
-git clone git@github.com:huddlej/bac_analysis.git .
+git clone https://github.com/huddlej/bac_analysis.git .
 ```
 
 Create a list of clone ids to analyze. If the clones are already present in
