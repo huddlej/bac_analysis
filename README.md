@@ -18,7 +18,7 @@ line. Additionally, create a separate tab-delimited file with the clone id in
 the first column and the absolute path to the clone FASTA sequence in the second
 column.
 
-Copy a configuration template from `config_templates/ to `config.json` and
+Copy a configuration template from `config_templates/` to `config.json` and
 modify the settings in `config.json` for your organism and clones. If you have
 local clones, add a configuration setting called `clone_paths` with the absolute
 path to the tab-delimited list of clone paths.
