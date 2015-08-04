@@ -51,19 +51,19 @@ rule convert_gene_liftover_lav_to_psl:
     shell: "lavToPsl {input} {output}"
 
 rule place_genes_in_clone:
-    input: target="all_masked/{clone}", query=config["mrna_fasta"]
+    input: target="all_masked/{clone}", query=config.get("mrna_fasta", "")
     output: lav="gene_liftover_lav/{clone}.lav"
     params: sge_opts="-l mfree=4G"
     shell: "lastz {input.target} {input.query} --gfextend --chain --gapped --notransition --format=lav > {output.lav}"
 
 rule create_mrna_info:
-    input: config["mrna_fasta"]
+    input: config.get("mrna_fasta", "")
     output: "mRNA.chromInfo"
     params: sge_opts=""
     shell: "samtools faidx {input}; mv {input}.fai {output}"
 
 rule create_mrna_two_bit:
-    input: config["mrna_fasta"]
+    input: config.get("mrna_fasta", "")
     output: "mRNA.2bit"
     params: sge_opts=""
     shell: "faToTwoBit {input} {output}"
