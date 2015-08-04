@@ -1,3 +1,5 @@
+import os
+
 SPECIES = config["full_species_name"]
 
 if "clone_paths" in config:
@@ -129,7 +131,10 @@ rule repeatmask_sequences:
     input: "rawFA/{accession,\d+.\d}"
     output: "mask/{accession}.masked", "mask/{accession}.out.gff"
     params: sge_opts="-l mfree=2G"
-    shell: """RepeatMasker -gff -no_is -xsmall -q -e wublast -species "{SPECIES}" -dir `dirname {output[0]}` {input}; rm -f `dirname {output[0]}`/{wildcards.accession}.{{cat,out,ref,tbl}}"""
+    run:
+        shell("""RepeatMasker -gff -no_is -xsmall -q -e wublast -species "{SPECIES}" -dir `dirname {output[0]}` {input}; rm -f `dirname {output[0]}`/{wildcards.accession}.{{cat,out,ref,tbl}}""")
+        if not all([os.path.exists(out) for out in output]):
+            shell("rsync {input} {output[0]}; touch {output[1]}")
 
 rule find_gaps:
     input: "rawFA/{accession}"
