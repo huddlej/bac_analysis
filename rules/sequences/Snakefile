@@ -132,7 +132,7 @@ rule repeatmask_sequences:
     output: "mask/{accession}.masked", "mask/{accession}.out.gff"
     params: sge_opts="-l mfree=2G"
     run:
-        shell("""RepeatMasker -gff -no_is -xsmall -q -e wublast -species "{SPECIES}" -dir `dirname {output[0]}` {input}; rm -f `dirname {output[0]}`/{wildcards.accession}.{{cat,out,ref,tbl}}""")
+        shell("""RepeatMasker -gff -no_is -xsmall -s -e wublast -species "{SPECIES}" -dir `dirname {output[0]}` {input}; rm -f `dirname {output[0]}`/{wildcards.accession}.{{cat,out,ref,tbl}}""")
         if not all([os.path.exists(out) for out in output]):
             shell("rsync {input} {output[0]}; touch {output[1]}")
 
