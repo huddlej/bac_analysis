@@ -6,4 +6,4 @@ module load anaconda/2.3.0
 . rules/sequences/config.sh
 . rules/tracks/config.sh
 
-export PATH=$PATH:/net/eichler/vol2/local/bin
+export PATH=$PATH:/net/eichler/vol2/local/bin:/net/eichler/vol2/local/inhousebin
