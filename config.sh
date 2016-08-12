@@ -1,4 +1,4 @@
-module load anaconda/2.1.0
+module load anaconda/2.3.0
 
 . rules/genes/config.sh
 . rules/liftover/config.sh
