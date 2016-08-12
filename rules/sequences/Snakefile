@@ -119,7 +119,7 @@ rule tandem_repeat_finder:
     input: "mask/{accession}.masked"
     output: "mask/{accession}.trf.mask"
     params: sge_opts=""
-    shell: "cd `dirname {input}`; trf ../{input} {TRF_PARAMS} -m; mv ../{input}.{TRF_PARAMS_OUTPUT}.mask ../{output}; rm -f ../`dirname {output}`/{wildcards.accession}*.html"
+    shell: "cd `dirname {input}`; trf ../{input} {TRF_PARAMS} -m || true; mv ../{input}.{TRF_PARAMS_OUTPUT}.mask ../{output}; rm -f ../`dirname {output}`/{wildcards.accession}*.html"
 
 rule convert_repeatmasker_gff_to_bed:
     input: "mask/{accession}.out.gff"
