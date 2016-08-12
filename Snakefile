@@ -8,9 +8,10 @@ include: "rules/wssd/Snakefile"
 include: "rules/tracks/Snakefile"
 include: "rules/genes_by_lastz/Snakefile"
 include: "rules/shared_sequence/Snakefile"
+include: "rules/align_with_blasr/Snakefile"
 
 rule all:
-    input: "annotations_per_accession.tab", "duplicated_genes_per_accession.tab", "tracks/genomes.txt"
+    input: "annotations_per_accession.tab", "duplicated_genes_per_accession.tab", "tracks/genomes.txt", "blasr_alignments.query_subject_pairs.bed"
     params: sge_opts=""
 
 rule combine_reports:
