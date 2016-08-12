@@ -1,0 +1,22 @@
+
+rule get_query_subject_pairs_from_blasr_alignments:
+    input: "blasr_alignments.slop.bed"
+    output: "blasr_alignments.query_subject_pairs.bed"
+    shell: """sed 's/\//\\t/;s/0_/0\\t/' {input} | awk 'OFS="\\t" {{ print $4,1,$6,$1,$2,$3,$NF }}' > {output}"""
+
+rule add_slop_to_blasr_alignments:
+    input: bed="blasr_alignments.bed", chromosomes=config["chromosome_info"]
+    output: "blasr_alignments.slop.bed"
+    params: slop=40000
+    shell: "bedtools slop -i {input.bed} -g {input.chromosomes} -b {params.slop} | sed '/177K/d;/157F4/d;/84B10/d' | sort -k 1,1 -k 2,2n > {output}"
+
+rule convert_blasr_alignments_to_bed_with_slop:
+    input: "blasr_alignments.bam",
+    output: "blasr_alignments.bed"
+    shell: "bedtools bamtobed -i {input} | sort -k 1,1 -k 2,2n > {output}"
+
+rule align_clones_with_blasr:
+    input: query="clones.fasta", reference=config["reference_fasta"], suffix_array=config["suffix_array"], ctab=config["ctab"]
+    output: "blasr_alignments.bam"
+    params: sge_opts="-l mfree=4G", threads=config.get("blasr_threads", 1)
+    shell: "blasr {input.query} {input.reference} -sa {input.suffix_array} -ctab {input.ctab} -nproc {params.threads} -clipping subread -affineAlign -affineOpen 8 -affineExtend 0 -bestn 1 -maxMatch 30 -sdpTupleSize 13 -sam -unaligned /dev/null -out /dev/stdout | samtools sort - > {output}"
