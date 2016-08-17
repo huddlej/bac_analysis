@@ -1,14 +1,27 @@
+import pandas as pd
+
 
 rule get_query_subject_pairs_from_blasr_alignments:
-    input: "blasr_alignments.slop.bed"
+    input: alignments="blasr_alignments.slop.bed", lengths="clones.fasta.fai"
     output: "blasr_alignments.query_subject_pairs.bed"
-    shell: """sed 's/\//\\t/;s/0_/0\\t/' {input} | awk 'OFS="\\t" {{ print $4,1,$6,$1,$2,$3,$NF }}' > {output}"""
+    run:
+        alignments = pd.read_table(input.alignments, header=None, names=("chromosome", "start", "end", "clone", "strand_integer"))
+        alignments["strand"] = alignments["strand_integer"].apply(lambda value: "+" if value == 0 else "-")
+        lengths = pd.read_table(input.lengths, header=None, names=("clone", "length", "col_3", "col_4", "col_5"))
+        lengths["clone_start"] = 1
+        alignments_with_lengths = alignments.merge(lengths, how="left", on="clone")
+        alignments_with_lengths.to_csv(output[0], sep="\t", header=False, index=False, columns=("clone", "clone_start", "length", "chromosome", "start", "end", "strand"))
 
 rule add_slop_to_blasr_alignments:
-    input: bed="blasr_alignments.bed", chromosomes=config["chromosome_info"]
+    input: bed="blasr_alignments_with_identity.bed", chromosomes=config["chromosome_info"]
     output: "blasr_alignments.slop.bed"
     params: slop=40000
-    shell: "bedtools slop -i {input.bed} -g {input.chromosomes} -b {params.slop} | sed '/177K/d;/157F4/d;/84B10/d' | sort -k 1,1 -k 2,2n > {output}"
+    shell: "bedtools slop -i {input.bed} -g {input.chromosomes} -b {params.slop} | cut -f 1-5 | sort -k 1,1 -k 2,2n > {output}"
+
+rule convert_blasr_alignments_to_bed_with_identity:
+    input: "blasr_alignments.bam",
+    output: "blasr_alignments_with_identity.bed"
+    shell: "samtools view -h {input} | ~mchaisso/projects/mcutils/bin/samToBed /dev/stdin --reportIdentity --ignoreN | awk '$10 > 20000' | sort -k 4,4 -k 10,10rn | groupBy -i stdin -full -g 4 -c 4 -o first > {output}"
 
 rule convert_blasr_alignments_to_bed_with_slop:
     input: "blasr_alignments.bam",
@@ -16,7 +29,17 @@ rule convert_blasr_alignments_to_bed_with_slop:
     shell: "bedtools bamtobed -i {input} | sort -k 1,1 -k 2,2n > {output}"
 
 rule align_clones_with_blasr:
-    input: query="clones.fasta", reference=config["reference_fasta"], suffix_array=config["suffix_array"], ctab=config["ctab"]
+    input: query="clones.screen.fasta", reference=config["reference_fasta"], suffix_array=config["suffix_array"], ctab=config["ctab"]
     output: "blasr_alignments.bam"
     params: sge_opts="-l mfree=4G", threads=config.get("blasr_threads", 1)
-    shell: "blasr {input.query} {input.reference} -sa {input.suffix_array} -ctab {input.ctab} -nproc {params.threads} -clipping subread -affineAlign -affineOpen 8 -affineExtend 0 -bestn 1 -maxMatch 30 -sdpTupleSize 13 -sam -unaligned /dev/null -out /dev/stdout | samtools sort - > {output}"
+    shell: "blasr {input.query} {input.reference} -sa {input.suffix_array} -ctab {input.ctab} -nproc {params.threads} -clipping subread -affineAlign -affineOpen 8 -affineExtend 0 -bestn 10 -maxMatch 30 -sdpTupleSize 13 -sam -unaligned /dev/null -out /dev/stdout | samtools sort - > {output}; samtools index {output}"
+
+rule screen_clones_with_crossmatch:
+    input: clones="clones.fasta", repeats=config["repeats_to_screen"]
+    output: "clones.screen.fasta"
+    shell: "cross_match {input.clones} {input.repeats} -minmatch 10 -minscore 20 -screen &> /dev/null; mv -f {input.clones}.screen {output}"
+
+rule index_clones_fasta:
+    input: "clones.fasta"
+    output: "clones.fasta.fai"
+    shell: "samtools faidx {input}"
