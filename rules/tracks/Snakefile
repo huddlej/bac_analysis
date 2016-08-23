@@ -1,4 +1,4 @@
-TRACKS = ("gaps", "repeats", "segmental_duplications", "genes", "wssd", "tandem_repeats", "wssd_reads", "wssd_depth", "wssd_identity", "shared_sequence_between_clones")
+TRACKS = ("gaps", "repeats", "reference_alignments", "segmental_duplications", "genes", "wssd", "tandem_repeats", "wssd_reads", "wssd_depth", "wssd_identity", "shared_sequence_between_clones")
 
 rule genomes:
     input: trackdb="tracks/trackDb.txt", sequence="tracks/clones.2bit", contigs="bac.out", groups="tracks/groups.txt"
@@ -185,6 +185,26 @@ rule wssd_duplications:
     output: "tracks/wssd.bb"
     params: sge_opts=""
     shell: "bedToBigBed {input} {output}"
+
+rule reference_alignments_trackdef:
+    input: "tracks/reference_alignments.bb"
+    output: "tracks/reference_alignments.trackDb.txt"
+    params: sge_opts=""
+    shell: """echo "track reference_alignments
+shortLabel Reference alignments
+longLabel Reference alignments
+type bigPsl
+bigDataUrl {input}
+group map
+visibility pack
+" > {output}
+"""
+
+rule convert_swapped_bigpsl_to_bigbed:
+    input: bigpsl="liftover.clone_to_chromosome.bigpsl", autosql="autosql/bigPsl.as", chromosomes="bac.out"
+    output: "tracks/reference_alignments.bb"
+    params: sge_opts=""
+    shell: "bedToBigBed -as={input.autosql} -type=bed12+12 -tab {input.bigpsl} {input.chromosomes} {output}"
 
 rule segmental_duplications_trackdef:
     input: "tracks/segmental_duplications.bb"

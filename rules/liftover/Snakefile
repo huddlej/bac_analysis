@@ -5,6 +5,26 @@ chromosome_fastas = glob.glob("%s/*" % config["chromosomes_dir"])
 #chromosome_fastas = [chromosome_fasta for chromosome_fasta in chromosome_fastas if not "chrUn" in chromosome_fasta]
 chromosomes = [os.path.basename(chromosome_fasta) for chromosome_fasta in chromosome_fastas]
 
+# Swap liftover chains to get coordinates of reference chromosomes in clone
+# space.
+rule convert_swapped_liftover_psl_to_bigpsl:
+    input: "liftover.clone_to_chromosome.psl"
+    output: "liftover.clone_to_chromosome.bigpsl"
+    params: sge_opts=""
+    shell: "pslToBigPsl {input} stdout | sort -k 1,1 -k 2,2n > {output}"
+
+rule convert_swapped_liftover_chain_to_psl:
+    input: "liftover.clone_to_chromosome.chain", "clones.chromInfo", config["chromosome_info"], "clones.2bit", config["reference_2bit"]
+    output: "liftover.clone_to_chromosome.psl"
+    params: sge_opts=""
+    shell: "chainToPsl {input} {output}"
+
+rule swap_liftover_chain_target_and_query:
+    input: "liftover.chain"
+    output: "liftover.clone_to_chromosome.chain"
+    params: sge_opts=""
+    shell: "chainSwap {input} {output}"
+
 # Create lift over from reference to BACs.
 rule convert_liftover_psl_to_bed:
     input: "liftover.psl"
