@@ -129,4 +129,4 @@ rule blast:
     input: "mask/{accession}.all_masked.fasta"
     output: "mega64_out/{accession}.bo"
     params: threads=config.get("threads", 1)
-    shell: """~jlhudd/src/ncbi-blast-2.4.0+/bin/blastn -num_threads {params.threads} -task megablast -db %s -query {input} -out {output} -min_raw_gapped_score 220 -perc_identity 93 -lcase_masking -soft_masking true -xdrop_ungap 10 -xdrop_gap 50 -penalty -3 -outfmt "7 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore qseq sseq" -num_alignments 1000000""" % config["wssd_database"]
+    shell: """blastn -num_threads {params.threads} -task megablast -db %s -query {input} -out {output} -min_raw_gapped_score 220 -perc_identity 93 -lcase_masking -soft_masking true -xdrop_ungap 10 -xdrop_gap 50 -penalty -3 -outfmt "7 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore qseq sseq" -num_alignments 1000000""" % config["wssd_database"]

@@ -6,5 +6,6 @@ module load anaconda/2.3.0
 . rules/segmental_duplications/config.sh
 . rules/sequences/config.sh
 . rules/tracks/config.sh
+. rules/wssd/config.sh
 
 export PATH=$PATH:/net/eichler/vol2/local/bin:/net/eichler/vol2/local/inhousebin
