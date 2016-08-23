@@ -21,7 +21,7 @@ rule convert_shared_sequence_lav_to_psl:
     shell: "lavToPsl {input} {output}"
 
 rule compare_clones:
-    input: target="all_masked/{clone}", query="clones.fasta"
+    input: target="mask/{clone}.all_masked.fasta", query="clones.fasta"
     output: lav="shared_sequence_lav/{clone}.lav"
     params: sge_opts="-l mfree=4G"
     shell: "lastz {input.target} {input.query} --gfextend --chain --gapped --notransition --format=lav --notrivial > {output.lav}"
