@@ -1,4 +1,4 @@
-TRACKS = ("gaps", "repeats", "segmental_duplications", "genes", "wssd", "tandem_repeats", "wssd_depth", "shared_sequence_between_clones")
+TRACKS = ("gaps", "repeats", "segmental_duplications", "genes", "wssd", "tandem_repeats", "wssd_reads", "wssd_depth", "wssd_identity", "shared_sequence_between_clones")
 
 rule genomes:
     input: trackdb="tracks/trackDb.txt", sequence="tracks/clones.2bit", contigs="bac.out", groups="tracks/groups.txt"
@@ -96,17 +96,62 @@ rule tandem_repeats_bigbed:
     params: sge_opts=""
     shell: "bedToBigBed {input} {output}"
 
+rule wssd_reads_trackdef:
+    input: "tracks/wssd_reads.bb"
+    output: "tracks/wssd_reads.trackDb.txt"
+    params: sge_opts=""
+    shell: """echo "track wssd_reads
+shortLabel WSSD reads
+longLabel WSSD reads
+type bigBed 6
+bigDataUrl {input}
+group duplications
+visibility squish
+" > {output}
+"""
+
+rule wssd_reads:
+    input: "wins/wssd_reads.bed", "bac.out"
+    output: "tracks/wssd_reads.bb"
+    params: sge_opts=""
+    shell: "bedToBigBed {input} {output}"
+
+rule wssd_read_identity_trackdef:
+    input: "tracks/wssd_identity.bw"
+    output: "tracks/wssd_identity.trackDb.txt"
+    params: sge_opts=""
+    shell: """echo "track wssd_identity
+shortLabel Identity (1 kbp windows)
+longLabel WSSD mean identity (1 kbp windows)
+type bigWig
+bigDataUrl {input}
+group duplications
+autoScale off
+graphTypeDefault points
+maxHeightPixels 100:50:25
+viewLimits 0:1
+visibility full
+" > {output}
+"""
+
+rule wssd_read_identity:
+    input: "wins/wssd_identity_in_windows.bedGraph", "bac.out"
+    output: "tracks/wssd_identity.bw"
+    params: sge_opts=""
+    shell: "bedGraphToBigWig {input} {output}"
+
 rule wssd_read_depth_trackdef:
     input: "tracks/wssd_depth.bw"
     output: "tracks/wssd_depth.trackDb.txt"
     params: sge_opts="", threshold=str(config["wssd_threshold_5kb"] / 5), max_view_limit=str(int((config["wssd_threshold_5kb"] / 5) * 2))
     shell: """echo "track wssd_depth
-shortLabel Read depth (1 Kb windows)
-longLabel WSSD read depth (1 Kb windows)
+shortLabel Read depth (1 kbp windows)
+longLabel WSSD read depth (1 kbp windows)
 type bigWig
 bigDataUrl {input}
 group duplications
 autoScale off
+graphTypeDefault points
 maxHeightPixels 100:50:25
 viewLimits 0:{params.max_view_limit}
 yLineOnOff on

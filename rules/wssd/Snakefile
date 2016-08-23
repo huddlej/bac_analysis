@@ -61,6 +61,18 @@ rule pick_wssd_windows:
     params: sge_opts=""
     shell: "wssd_picker.pl -f {input.threshold_5kb} -w 7 -s 6 -c {WSSD_THRESHOLD_5KB} -b 3 -k {input.threshold_1kb} -n 5 -i 1 -t {WSSD_THRESHOLD_1KB} -o {output}"
 
+rule get_all_aligned_reads_from_wssd:
+    input: "wins/rd.out"
+    output: "wins/wssd_reads.bed"
+    params: sge_opts=""
+    shell: """awk 'OFS="\\t" {{ print $1,$2,$3,$6,sprintf("%i", $4 * 1000),$7 }}' {input} | sort -k 1,1 -k 2,2n > {output}"""
+
+rule calculate_identity_in_nonsliding_windows:
+    input: windows="wins/wssd_depth_windows.bed", reads="wins/rd.out"
+    output: "wins/wssd_identity_in_windows.bedGraph"
+    params: sge_opts=""
+    shell: "bedtools intersect -a {input.windows} -b {input.reads} -wo | groupBy -i stdin -g 1,2,3 -c 7 -o mean > {output}"
+
 rule calculate_depth_in_nonsliding_windows:
     input: windows="wins/wssd_depth_windows.bed", reads="wins/rd.out"
     output: "wins/wssd_depth_in_windows.bedGraph"
@@ -92,23 +104,29 @@ rule calculate_depth_in_5kb_windows:
     shell: "windowTracks_ovp.pl -w 5 -s 1 -a {input.sizes} -i {input.nonrepeats} -f -k {input.depth} -t -e -y 3 -g 4 -o {output} > /dev/null"
 
 rule calculate_read_depth:
-    input: "post_mega", "norptgap.tab"
+    input: "norptgap.tab", expand("post_mega/{accession}.bo.bo", accession=ACCESSIONS)
     output: "wins/rd.out"
     params: sge_opts=""
     run:
         if config.get("wssd_database_type") == "protein":
-            shell("mkdir -p $(dirname {output}); mega_wincln_qual_parser.pl -b %s -d {input[0]} -s .bo.bo -c -i 94 -e -a 300 -r {input[1]} -m 200 -h 200 -p 0.4 -o {output} -q -t > /dev/null;" % config.get("wssd_database"))
+            shell("mkdir -p $(dirname {output}); mega_wincln_qual_parser.pl -b %s -d `dirname {input[1]}` -s .bo.bo -c -i 94 -e -a 300 -r {input[0]} -m 200 -h 200 -p 0.4 -o {output} -q -t > /dev/null;" % config.get("wssd_database"))
         else:
             shell("mkdir -p $(dirname {output}); mega_wincln_qual_parser.pl -d {input[0]} -s .bo.bo -c -i 94 -e -a 300 -r {input[1]} -m 200 -h 200 -p 0.4 -o {output} -q -t > /dev/null;")
 
+def _get_quality_decoder_program(wildcards):
+    if config.get("wssd_database_type") == "protein":
+        return "/net/eichler/vol2/local/inhousebin/aa2qual"
+    else:
+        return "/net/eichler/vol2/local/inhousebin/c_code/convert/base2qual_compact_acgt"
+
 rule post_blast:
-    input: "mega64_out"
-    output: "post_mega"
-    params: cores=str(TOTAL_ACCESSIONS + 1), sge_opts=""
-    shell: "mkdir -p {output}; qsub -N post_wssd_{SPECIES_NAME} -sync y -cwd -q all.q -l h_vmem=4G -pe orte 2-{params.cores} ~jlhudd/wssd/mega64.sh -p -s {SPECIES_NAME} -b /var/tmp/{SPECIES_NAME}_wssd -i `pwd`/{input} -o `pwd`/{output}"
+    input: "mega64_out/{accession}.bo"
+    output: "post_mega/{accession}.bo.bo"
+    params: quality_decoder_program=_get_quality_decoder_program
+    shell: """perl /net/eichler/vol7/home/ginger/bin/blast_window_cleaner1.pl -in {input} -binsize 500 -maxreads 20 -o STDOUT | perl /net/eichler/vol7/home/ginger/bin/newQ_NFS_blast_quality_rescorer353a_gg.pl -in STDIN -minquality 30 -alignments 12:13 -qual2db %s.qual -qdecode_program {params.quality_decoder_program} -inputtype megablastD3 -pattern2 "lcl\|(\S+)" -pattern1 "([A-Z0-9]+\.\d+)" -noalignments -globalfast -out {output}""" % config["wssd_database"]
 
 rule blast:
-    input: "all_masked"
-    output: "mega64_out"
-    params: cores=str(TOTAL_ACCESSIONS + 1), sge_opts=""
-    shell: "mkdir -p {output}; qsub -N wssd_{SPECIES_NAME} -sync y -cwd -q all.q -l h_vmem=4G -pe orte 2-{params.cores} ~jlhudd/wssd/mega64.sh -s {SPECIES_NAME} -b /var/tmp/{SPECIES_NAME}_wssd -i {input} -o `pwd`/{output}"
+    input: "mask/{accession}.all_masked.fasta"
+    output: "mega64_out/{accession}.bo"
+    params: threads=config.get("threads", 1)
+    shell: """~jlhudd/src/ncbi-blast-2.4.0+/bin/blastn -num_threads {params.threads} -task megablast -db %s -query {input} -out {output} -min_raw_gapped_score 220 -perc_identity 93 -lcase_masking -soft_masking true -xdrop_ungap 10 -xdrop_gap 50 -penalty -3 -outfmt "7 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore qseq sseq" -num_alignments 1000000""" % config["wssd_database"]
